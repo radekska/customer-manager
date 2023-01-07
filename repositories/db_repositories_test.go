@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"customer-manager/database"
@@ -30,14 +30,15 @@ func clearRecords(t *testing.T, db *gorm.DB) {
 	}
 }
 
+var db = database.GetDatabase("../test.db", &gorm.Config{Logger: newLogger})
+
 func TestDBCustomerRepository(t *testing.T) {
-	db := database.GetDatabase("../test.db", &gorm.Config{Logger: newLogger})
-	repository := DBCustomerRepository{db}
+	customerRepository := DBCustomerRepository{db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 
 	clearRecords(t, db)
 	t.Run("test create customer", func(t *testing.T) {
-		err := repository.Create(customer)
+		err := customerRepository.Create(customer)
 
 		var dbCustomer database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
@@ -50,10 +51,10 @@ func TestDBCustomerRepository(t *testing.T) {
 	})
 
 	t.Run("test cannot create customer with the same name and telephone number", func(t *testing.T) {
-		err := repository.Create(customer)
+		err := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
-		err = repository.Create(customer)
+		err = customerRepository.Create(customer)
 
 		var dbCustomers []database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").Find(&dbCustomers)
@@ -71,17 +72,23 @@ func TestDBCustomerRepository(t *testing.T) {
 	t.Run("test delete customer indempotently", func(t *testing.T) {
 
 	}) // TODO
+}
+func TestDBPurchaseRepository(t *testing.T) {
+	customerRepository := DBCustomerRepository{db}
+	purchaseRepository := DBPurchaseRepository{db: db}
+	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 
 	t.Run("test add purchase to a customer", func(t *testing.T) {
-		err := repository.Create(customer)
+		err := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
 		var dbCustomer database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
 
-		repository.AddPurchase(&dbCustomer, &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
+		err = purchaseRepository.Create(&dbCustomer, &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
 			LensPower: "LensPower", PD: "CustomPD"})
 
+		assert.NoError(t, err)
 		var dbPurchase database.Purchase
 		db.Where("customer_id = ?", dbCustomer.ID).First(&dbPurchase)
 
@@ -97,15 +104,23 @@ func TestDBCustomerRepository(t *testing.T) {
 	t.Run("test remove purchase", func(t *testing.T) {
 
 	}) // TODO
+}
+
+func TestDBRepairRepository(t *testing.T) {
+	customerRepository := DBCustomerRepository{db}
+	repairRepository := DBRepairRepository{db: db}
+	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 
 	t.Run("test add repair to a customer", func(t *testing.T) {
-		err := repository.Create(customer)
+		err := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
 		var dbCustomer database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
 
-		repository.AddRepair(&dbCustomer, &database.Repair{Description: "some issue with the thing", Cost: 12.32})
+		err = repairRepository.Create(&dbCustomer, &database.Repair{Description: "some issue with the thing", Cost: 12.32})
+
+		assert.NoError(t, err)
 
 		var dbRepair database.Repair
 		db.Where("customer_id = ?", dbCustomer.ID).First(&dbRepair)
