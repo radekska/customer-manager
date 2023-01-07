@@ -9,8 +9,9 @@ type DBCustomerRepository struct {
 	db *gorm.DB
 }
 
-func (d *DBCustomerRepository) Create(customer *database.Customer) {
-	d.db.Create(&customer)
+func (d *DBCustomerRepository) Create(customer *database.Customer) error {
+	result := d.db.Create(&customer)
+	return result.Error
 }
 
 func (d *DBCustomerRepository) AddPurchase(customer *database.Customer, purchase *database.Purchase) {
