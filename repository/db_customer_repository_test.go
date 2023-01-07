@@ -64,6 +64,14 @@ func TestDBCustomerRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
+	t.Run("test delete customer", func(t *testing.T) {
+
+	}) // TODO
+
+	t.Run("test delete customer indempotently", func(t *testing.T) {
+
+	}) // TODO
+
 	t.Run("test add purchase to a customer", func(t *testing.T) {
 		err := repository.Create(customer)
 		assert.NoError(t, err)
@@ -86,6 +94,10 @@ func TestDBCustomerRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
+	t.Run("test remove purchase", func(t *testing.T) {
+
+	}) // TODO
+
 	t.Run("test add repair to a customer", func(t *testing.T) {
 		err := repository.Create(customer)
 		assert.NoError(t, err)
@@ -104,4 +116,8 @@ func TestDBCustomerRepository(t *testing.T) {
 
 		clearRecords(t, db)
 	})
+
+	t.Run("test remove repair", func(t *testing.T) {
+
+	}) // TODO
 }
