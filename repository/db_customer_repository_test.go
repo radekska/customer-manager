@@ -24,9 +24,10 @@ var newLogger = logger.New(
 func TestDBCustomerRepository(t *testing.T) {
 	db := database.GetDatabase("../test.db", &gorm.Config{Logger: newLogger, FullSaveAssociations: true})
 	repository := DBCustomerRepository{db}
+	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 
 	t.Run("test create customer", func(t *testing.T) {
-		repository.Create(&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"})
+		repository.Create(customer)
 
 		var dbCustomer database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
@@ -37,7 +38,7 @@ func TestDBCustomerRepository(t *testing.T) {
 	})
 
 	t.Run("test add purchase to a customer", func(t *testing.T) {
-		repository.Create(&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"})
+		repository.Create(customer)
 		var dbCustomer database.Customer
 		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
 
@@ -52,5 +53,20 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.Equal(t, "LensPower", dbPurchase.LensPower)
 		assert.Equal(t, "CustomPD", dbPurchase.PD)
 		assert.Equal(t, dbCustomer.ID, dbPurchase.CustomerID)
+	})
+
+	t.Run("test add repair to a customer", func(t *testing.T) {
+		repository.Create(customer)
+		var dbCustomer database.Customer
+		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
+
+		repository.AddRepair(&dbCustomer, &database.Repair{Description: "some issue with the thing", Cost: 12.32})
+
+		var dbRepair database.Repair
+		db.Where("customer_id = ?", dbCustomer.ID).First(&dbRepair)
+
+		assert.Equal(t, "some issue with the thing", dbRepair.Description)
+		assert.Equal(t, 12.32, dbRepair.Cost)
+		assert.Equal(t, dbCustomer.ID, dbRepair.CustomerID)
 	})
 }

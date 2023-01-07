@@ -14,7 +14,14 @@ func (d *DBCustomerRepository) Create(customer *database.Customer) {
 }
 
 func (d *DBCustomerRepository) AddPurchase(customer *database.Customer, purchase *database.Purchase) {
-	err := d.db.Model(&customer).Association("Purchases").Append(purchase)
+	err := d.db.Model(customer).Association("Purchases").Append(purchase)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (d *DBCustomerRepository) AddRepair(customer *database.Customer, repair *database.Repair) {
+	err := d.db.Model(customer).Association("Repairs").Append(repair)
 	if err != nil {
 		panic(err)
 	}

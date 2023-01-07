@@ -14,6 +14,7 @@ type Customer struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	Purchases       []Purchase `gorm:"foreignKey:CustomerID"`
+	Repairs         []Repair   `gorm:"foreignKey:CustomerID"`
 }
 
 func (u *Customer) BeforeCreate(tx *gorm.DB) (err error) {
@@ -40,9 +41,9 @@ func (p *Purchase) BeforeCreate(tx *gorm.DB) (err error) {
 type Repair struct {
 	ID          string `gorm:"primaryKey"`
 	Description string
-	Cost        float32
+	Cost        float64 `gorm:"precision:2"`
 	CustomerID  string
-	Customer    Customer `gorm:"foreignKey:CustomerID"`
+	Customer    Customer
 	CreatedAt   time.Time
 }
 

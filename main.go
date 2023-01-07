@@ -33,6 +33,5 @@ func main() {
 	)
 
 	db := database.GetDatabase("test.db", &gorm.Config{Logger: newLogger})
-	database.RunMigration(db, &database.Customer{})
-	database.RunMigration(db, &database.Purchase{})
+	database.RunMigration(db, &database.Customer{}, &database.Purchase{}, &database.Repair{})
 }
