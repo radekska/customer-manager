@@ -1,11 +1,8 @@
 package repository
 
-type Customer struct {
-	FirstName string
-	LastName  string
-	Age       int
-}
+import "customer-manager/database"
 
 type CustomerRepository interface {
-	Create(customer *Customer)
+	Create(customer *database.Customer)
+	AddPurchase(customer *database.Customer, purchase *database.Purchase)
 }

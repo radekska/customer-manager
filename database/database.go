@@ -5,13 +5,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type Customer struct {
-	gorm.Model
-	FirstName string
-	LastName  string
-	Age       int
-}
-
 func GetDatabase(dsn string, config *gorm.Config) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(dsn), config)
 	if err != nil {

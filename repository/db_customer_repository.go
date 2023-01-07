@@ -9,6 +9,13 @@ type DBCustomerRepository struct {
 	db *gorm.DB
 }
 
-func (d *DBCustomerRepository) Create(customer *Customer) {
-	d.db.Create(&database.Customer{FirstName: customer.FirstName, LastName: customer.LastName, Age: customer.Age})
+func (d *DBCustomerRepository) Create(customer *database.Customer) {
+	d.db.Create(&customer)
+}
+
+func (d *DBCustomerRepository) AddPurchase(customer *database.Customer, purchase *database.Purchase) {
+	err := d.db.Model(&customer).Association("Purchases").Append(purchase)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -4,20 +4,53 @@ import (
 	"customer-manager/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
 	"testing"
+	"time"
 )
 
-func TestCreateCustomer(t *testing.T) {
-	customer := &Customer{FirstName: "John", LastName: "Doe", Age: 32}
-	db := database.GetDatabase("../test.db", &gorm.Config{})
-	storage := DBCustomerRepository{db}
+var newLogger = logger.New(
+	log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+	logger.Config{
+		SlowThreshold:             time.Second, // Slow SQL threshold
+		LogLevel:                  logger.Info, // Log level
+		IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+		Colorful:                  true,        // Disable color
+	},
+)
 
-	storage.Create(customer)
+func TestDBCustomerRepository(t *testing.T) {
+	db := database.GetDatabase("../test.db", &gorm.Config{Logger: newLogger, FullSaveAssociations: true})
+	repository := DBCustomerRepository{db}
 
-	var dbCustomer database.Customer
-	db.Where("first_name = ? AND last_name = ? AND age = ?", customer.FirstName, customer.LastName, customer.Age).First(&dbCustomer)
+	t.Run("test create customer", func(t *testing.T) {
+		repository.Create(&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"})
 
-	assert.Equal(t, customer.FirstName, dbCustomer.FirstName)
-	assert.Equal(t, customer.LastName, dbCustomer.LastName)
-	assert.Equal(t, customer.Age, dbCustomer.Age)
+		var dbCustomer database.Customer
+		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
+
+		assert.Equal(t, "John", dbCustomer.FirstName)
+		assert.Equal(t, "Doe", dbCustomer.LastName)
+		assert.Equal(t, "123456789", dbCustomer.TelephoneNumber)
+	})
+
+	t.Run("test add purchase to a customer", func(t *testing.T) {
+		repository.Create(&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"})
+		var dbCustomer database.Customer
+		db.Where("first_name = ? AND last_name = ?", "John", "Doe").First(&dbCustomer)
+
+		repository.AddPurchase(&dbCustomer, &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
+			LensPower: "LensPower", PD: "CustomPD"})
+
+		var dbPurchase database.Purchase
+		db.Where("customer_id = ?", dbCustomer.ID).First(&dbPurchase)
+
+		assert.Equal(t, "Model1", dbPurchase.FrameModel)
+		assert.Equal(t, "LensType1", dbPurchase.LensType)
+		assert.Equal(t, "LensPower", dbPurchase.LensPower)
+		assert.Equal(t, "CustomPD", dbPurchase.PD)
+		assert.Equal(t, dbCustomer.ID, dbPurchase.CustomerID)
+	})
 }
