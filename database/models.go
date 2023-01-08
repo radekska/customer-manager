@@ -8,13 +8,13 @@ import (
 
 type Customer struct {
 	ID              string `gorm:"primaryKey"`
-	FirstName       string
-	LastName        string
-	TelephoneNumber string
+	FirstName       string `gorm:"uniqueIndex:uniquecustomer"`
+	LastName        string `gorm:"uniqueIndex:uniquecustomer"`
+	TelephoneNumber string `gorm:"uniqueIndex:uniquecustomer"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	Purchases       []Purchase `gorm:"foreignKey:CustomerID"`
-	Repairs         []Repair   `gorm:"foreignKey:CustomerID"`
+	Purchases       []Purchase `gorm:"foreignKey:CustomerID;"`
+	Repairs         []Repair   `gorm:"foreignKey:CustomerID;"`
 }
 
 func (u *Customer) BeforeCreate(tx *gorm.DB) (err error) {
