@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/joho/godotenv v1.4.0
 	github.com/stretchr/testify v1.8.1
 	gorm.io/driver/sqlite v1.4.4
 	gorm.io/gorm v1.24.3
