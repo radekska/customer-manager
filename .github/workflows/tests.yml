@@ -6,5 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        name: Checkout current repo
       - uses: actions/setup-go@v3
-      - run: go test -v ./...
+        name: Install Go
+      - name: Run tests
+        run: go test -v ./...
