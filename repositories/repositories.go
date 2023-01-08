@@ -8,10 +8,11 @@ type CustomerRepository interface {
 }
 
 type PurchaseRepository interface {
-	Create(customer *database.Customer, purchase *database.Purchase) error
+	Create(customer *database.Customer, purchase *database.Purchase) (error, *database.Purchase)
 	DeleteByID(purchaseID string) error
 }
 
 type RepairRepository interface {
-	Create(customer *database.Customer, repair *database.Repair) error
+	Create(customer *database.Customer, repair *database.Repair) (error, *database.Repair)
+	DeleteByID(repairID string) error
 }

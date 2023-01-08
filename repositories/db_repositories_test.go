@@ -40,24 +40,37 @@ func getAllCustomers(t *testing.T, db *gorm.DB) []database.Customer {
 	return customers
 }
 
-func getAllPurchases(t *testing.T, db *gorm.DB) []database.Purchase {
+func getPurchaseByID(purchaseID string, t *testing.T, db *gorm.DB) *database.Purchase {
 	t.Helper()
-	var purchases []database.Purchase
-	db.Find(&purchases)
-	return purchases
+	var purchase database.Purchase
+	result := db.Where(&database.Purchase{ID: purchaseID}).Find(&purchase)
+	if result.RowsAffected == 0 {
+		return nil
+	}
+	return &purchase
 }
 
-func getPurchasesByID(purchaseID string, t *testing.T, db *gorm.DB) []database.Purchase {
+func getRepairByID(repairID string, t *testing.T, db *gorm.DB) *database.Repair {
 	t.Helper()
-	var purchases []database.Purchase
-	db.Where(&database.Purchase{ID: purchaseID}).Find(&purchases)
-	return purchases
+	var repair database.Repair
+	result := db.Where(&database.Repair{ID: repairID}).Find(&repair)
+	if result.RowsAffected == 0 {
+		return nil
+	}
+	return &repair
 }
 func getAllRepairs(t *testing.T, db *gorm.DB) []database.Repair {
 	t.Helper()
 	var repairs []database.Repair
 	db.Find(&repairs)
 	return repairs
+}
+
+func getAllPurchases(t *testing.T, db *gorm.DB) []database.Purchase {
+	t.Helper()
+	var purchase []database.Purchase
+	db.Find(&purchase)
+	return purchase
 }
 
 func TestDBCustomerRepository(t *testing.T) {
@@ -100,7 +113,7 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.NoError(t, err)
 		err, _ = purchaseRepository.Create(customer, purchase)
 		assert.NoError(t, err)
-		err = repairRepository.Create(customer, repair)
+		err, _ = repairRepository.Create(customer, repair)
 		assert.NoError(t, err)
 
 		err = customerRepository.DeleteByID(dbCustomer.ID)
@@ -145,7 +158,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
-	t.Run("test remove purchase", func(t *testing.T) {
+	t.Run("test remove purchase by ID", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
@@ -156,30 +169,25 @@ func TestDBPurchaseRepository(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, len(getAllCustomers(t, db)))
-		assert.Equal(t, 0, len(getPurchasesByID(dbPurchase.ID, t, db)))
+		assert.Nil(t, getPurchaseByID(dbPurchase.ID, t, db))
 
 		clearRecords(t, db)
-	}) // TODO
+	})
 }
 
 func TestDBRepairRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
 	repairRepository := DBRepairRepository{db: db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
+	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32}
 
 	t.Run("test add repair to a customer", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
-		err = repairRepository.Create(
-			dbCustomer,
-			&database.Repair{Description: "some issue with the thing", Cost: 12.32},
-		)
+		err, dbRepair := repairRepository.Create(dbCustomer, repair)
 
 		assert.NoError(t, err)
-
-		var dbRepair database.Repair
-		db.Where("customer_id = ?", dbCustomer.ID).First(&dbRepair)
 
 		assert.Equal(t, "some issue with the thing", dbRepair.Description)
 		assert.Equal(t, 12.32, dbRepair.Cost)
@@ -188,7 +196,19 @@ func TestDBRepairRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
-	t.Run("test remove repair", func(t *testing.T) {
+	t.Run("test remove repair by ID", func(t *testing.T) {
+		err, dbCustomer := customerRepository.Create(customer)
+		assert.NoError(t, err)
 
-	}) // TODO
+		err, dbRepair := repairRepository.Create(dbCustomer, repair)
+		assert.NoError(t, err)
+
+		err = repairRepository.DeleteByID(dbRepair.ID)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 1, len(getAllCustomers(t, db)))
+		assert.Nil(t, getRepairByID(dbRepair.ID, t, db))
+
+		clearRecords(t, db)
+	})
 }
