@@ -9,5 +9,7 @@ jobs:
         name: Checkout current repo
       - uses: actions/setup-go@v3
         name: Install Go
+        with:
+          check-latest: true
       - name: Run tests
         run: go test -v ./...
