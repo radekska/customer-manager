@@ -171,7 +171,10 @@ func TestDBRepairRepository(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
 		assert.NoError(t, err)
 
-		err = repairRepository.Create(dbCustomer, &database.Repair{Description: "some issue with the thing", Cost: 12.32})
+		err = repairRepository.Create(
+			dbCustomer,
+			&database.Repair{Description: "some issue with the thing", Cost: 12.32},
+		)
 
 		assert.NoError(t, err)
 

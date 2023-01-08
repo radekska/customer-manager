@@ -25,7 +25,10 @@ type DBPurchaseRepository struct {
 	db *gorm.DB
 }
 
-func (d *DBPurchaseRepository) Create(customer *database.Customer, purchase *database.Purchase) (error, *database.Purchase) {
+func (d *DBPurchaseRepository) Create(
+	customer *database.Customer,
+	purchase *database.Purchase,
+) (error, *database.Purchase) {
 	return d.db.Model(customer).Association("Purchases").Append(purchase), purchase
 }
 
