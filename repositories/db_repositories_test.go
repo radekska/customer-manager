@@ -7,20 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
 	"testing"
-	"time"
-)
-
-var newLogger = logger.New(
-	log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
-	logger.Config{
-		SlowThreshold:             time.Second,   // Slow SQL threshold
-		LogLevel:                  logger.Silent, // Log level
-		IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
-		Colorful:                  true,          // Disable color
-	},
 )
 
 func clearRecords(t *testing.T, db *gorm.DB) {
@@ -31,7 +18,7 @@ func clearRecords(t *testing.T, db *gorm.DB) {
 	}
 }
 
-var db = database.GetDatabase("../test.db", &gorm.Config{Logger: newLogger})
+var db = database.GetDatabase("../test.db", &gorm.Config{Logger: database.GetLogger(logger.Silent)})
 
 func getAllCustomers(t *testing.T, db *gorm.DB) []database.Customer {
 	t.Helper()
