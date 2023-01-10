@@ -18,7 +18,7 @@ func clearRecords(t *testing.T, db *gorm.DB) {
 	}
 }
 
-var db = database.GetDatabase("../test.db", &gorm.Config{Logger: database.GetLogger(logger.Silent)})
+var db = database.GetDatabase("../test.DB", &gorm.Config{Logger: database.GetLogger(logger.Silent)})
 
 func getAllCustomers(t *testing.T, db *gorm.DB) []database.Customer {
 	t.Helper()
