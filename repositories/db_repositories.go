@@ -7,15 +7,21 @@ import (
 )
 
 type DBCustomerRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func (d *DBCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
-	return d.db.Create(&customer).Error, customer
+	return d.DB.Create(&customer).Error, customer
 }
 
 func (d *DBCustomerRepository) DeleteByID(customerID string) error {
-	return d.db.Select(clause.Associations).Delete(&database.Customer{ID: customerID}).Error
+	return d.DB.Select(clause.Associations).Delete(&database.Customer{ID: customerID}).Error
+}
+
+func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
+	var customers []database.Customer
+	result := d.DB.Find(&customers)
+	return result.Error, customers
 }
 
 type DBPurchaseRepository struct {

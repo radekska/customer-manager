@@ -5,6 +5,7 @@ import "customer-manager/database"
 type CustomerRepository interface {
 	Create(customer *database.Customer) (error, *database.Customer)
 	DeleteByID(customerID string) error
+	GetAll() (error, []database.Customer)
 }
 
 type PurchaseRepository interface {

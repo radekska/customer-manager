@@ -46,6 +46,7 @@ func getRepairByID(repairID string, t *testing.T, db *gorm.DB) *database.Repair 
 	}
 	return &repair
 }
+
 func getAllRepairs(t *testing.T, db *gorm.DB) []database.Repair {
 	t.Helper()
 	var repairs []database.Repair
@@ -58,6 +59,16 @@ func getAllPurchases(t *testing.T, db *gorm.DB) []database.Purchase {
 	var purchase []database.Purchase
 	db.Find(&purchase)
 	return purchase
+}
+
+func assertCustomer(t *testing.T, expected *database.Customer, actual *database.Customer) {
+	t.Helper()
+	assert.Equal(t, expected.ID, actual.ID)
+	assert.Equal(t, expected.FirstName, actual.FirstName)
+	assert.Equal(t, expected.LastName, actual.LastName)
+	assert.Equal(t, expected.TelephoneNumber, actual.TelephoneNumber)
+	assert.Equal(t, expected.Purchases, actual.Purchases)
+	assert.Equal(t, expected.Repairs, actual.Repairs)
 }
 
 func TestDBCustomerRepository(t *testing.T) {
@@ -118,7 +129,39 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(getAllCustomers(t, db)))
 	})
+
+	t.Run("test get all customers", func(t *testing.T) {
+		var customers []database.Customer
+		customersData := []database.Customer{
+			{FirstName: "John", LastName: "Doe", TelephoneNumber: "123"},
+			{FirstName: "Jane", LastName: "Doe", TelephoneNumber: "321"},
+			{FirstName: "Bob", LastName: "Doe", TelephoneNumber: "893"},
+		}
+		for _, customerData := range customersData {
+			err, customer := customerRepository.Create(
+				&database.Customer{FirstName: customerData.FirstName, LastName: customerData.LastName})
+			assert.NoError(t, err)
+			customers = append(customers, *customer)
+		}
+
+		err, dbCustomers := customerRepository.GetAll()
+
+		assert.NoError(t, err)
+		for i := 0; i < len(customers); i++ {
+			assertCustomer(t, &customers[i], &dbCustomers[i])
+		}
+
+		clearRecords(t, db)
+	})
+
+	t.Run("test get all customers when no records ", func(t *testing.T) {
+		err, dbCustomers := customerRepository.GetAll()
+
+		assert.NoError(t, err)
+		assert.Len(t, dbCustomers, 0)
+	})
 }
+
 func TestDBPurchaseRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
 	purchaseRepository := DBPurchaseRepository{db}
