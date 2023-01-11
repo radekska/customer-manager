@@ -18,6 +18,12 @@ func (d *DBCustomerRepository) DeleteByID(customerID string) error {
 	return d.DB.Select(clause.Associations).Delete(&database.Customer{ID: customerID}).Error
 }
 
+func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
+	var customers []database.Customer
+	result := d.DB.Find(&customers)
+	return result.Error, customers
+}
+
 type DBPurchaseRepository struct {
 	db *gorm.DB
 }
