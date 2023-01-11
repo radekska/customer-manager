@@ -150,6 +150,15 @@ func TestDBCustomerRepository(t *testing.T) {
 		for i := 0; i < len(customers); i++ {
 			assertCustomer(t, &customers[i], &dbCustomers[i])
 		}
+
+		clearRecords(t, db)
+	})
+
+	t.Run("test get all customers when no records ", func(t *testing.T) {
+		err, dbCustomers := customerRepository.GetAll()
+
+		assert.NoError(t, err)
+		assert.Len(t, dbCustomers, 0)
 	})
 }
 
