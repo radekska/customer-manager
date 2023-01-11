@@ -2,11 +2,11 @@ package main
 
 import (
 	"customer-manager/database"
+	"customer-manager/repositories"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
-import "customer-manager/repositories"
 
 func main() {
 	app := fiber.New()
