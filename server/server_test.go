@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"customer-manager/database"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
@@ -15,7 +16,8 @@ type StubCustomerRepository struct {
 }
 
 func (s *StubCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
-	return nil, nil
+	s.customers = append(s.customers, *customer)
+	return nil, customer
 }
 
 func (s *StubCustomerRepository) DeleteByID(customerID string) error {
@@ -37,8 +39,10 @@ func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
 }
 
 func TestCustomerManagerServer(t *testing.T) {
+	customer := database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123-456-789"}
+
 	t.Run("test get all customers", func(t *testing.T) {
-		expectedCustomers := []database.Customer{{FirstName: "John", LastName: "Doe", TelephoneNumber: "123-456-789"}}
+		expectedCustomers := []database.Customer{customer}
 		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{customers: expectedCustomers})
 		req, _ := http.NewRequest(http.MethodGet, "/api/customers", nil)
 
@@ -57,5 +61,19 @@ func TestCustomerManagerServer(t *testing.T) {
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 		assert.ElementsMatch(t, expectedCustomers, decodeCustomers(t, resp.Body))
+	})
+
+	t.Run("test create new customer", func(t *testing.T) {
+		repository := &StubCustomerRepository{}
+		server := NewCustomerManagerServer(fiber.New(), repository)
+		body, _ := json.Marshal(&customer)
+		req, _ := http.NewRequest(http.MethodPost, "/api/customers", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := server.App.Test(req)
+
+		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
+		_, currentCustomers := repository.GetAll()
+		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
 }
