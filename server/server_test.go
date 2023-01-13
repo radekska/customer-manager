@@ -26,12 +26,14 @@ func (s *StubCustomerRepository) GetAll() (error, []database.Customer) {
 	return nil, s.customers
 }
 
-func decodeResponse(t *testing.T, body io.Reader, toStructure interface{}) {
+func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
 	t.Helper()
-	err := json.NewDecoder(body).Decode(&toStructure)
+	var currentCustomers []database.Customer
+	err := json.NewDecoder(body).Decode(&currentCustomers)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return currentCustomers
 }
 
 func TestCustomerManagerServer(t *testing.T) {
@@ -43,9 +45,7 @@ func TestCustomerManagerServer(t *testing.T) {
 		resp, _ := server.App.Test(req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		var currentCustomers []database.Customer
-		decodeResponse(t, resp.Body, currentCustomers)
-		assert.ElementsMatch(t, expectedCustomers, currentCustomers)
+		assert.ElementsMatch(t, expectedCustomers, decodeCustomers(t, resp.Body))
 	})
 
 	t.Run("test get no customers as empty repository", func(t *testing.T) {
@@ -56,8 +56,6 @@ func TestCustomerManagerServer(t *testing.T) {
 		resp, _ := server.App.Test(req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		var currentCustomers []database.Customer
-		decodeResponse(t, resp.Body, currentCustomers)
-		assert.ElementsMatch(t, expectedCustomers, currentCustomers)
+		assert.ElementsMatch(t, expectedCustomers, decodeCustomers(t, resp.Body))
 	})
 }
