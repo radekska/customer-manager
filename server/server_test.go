@@ -5,6 +5,7 @@ import (
 	"customer-manager/database"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/kinbiko/jsonassert"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
@@ -87,25 +88,23 @@ func TestCustomerManagerServer(t *testing.T) {
 		resp, _ := server.App.Test(req)
 
 		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-		var currentErrorMessage errorMessages
-		err := json.NewDecoder(resp.Body).Decode(&currentErrorMessage)
-		assert.NoError(t, err)
-		assert.Equal(
-			t,
-			errorMessages{
-				FirstName:       "this field is required",
-				LastName:        "this field is required",
-				TelephoneNumber: "this field is required",
+		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
+		currentErrorMessage, _ := io.ReadAll(resp.Body)
+		jsonassert.New(t).Assertf(
+			string(currentErrorMessage),
+			`{
+			"first_name": {
+				"required": "The 'first_name' is required"
 			},
-			currentErrorMessage,
+			"last_name": {
+				"required": "The 'last_name' is required"
+			},
+			"telephone_number": {
+				"required": "The 'telephone_number' is required"
+			}
+		}`,
 		)
 		_, currentCustomers := repository.GetAll()
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
-}
-
-type errorMessages struct {
-	FirstName       string `json:"first_name"`
-	LastName        string `json:"last_name"`
-	TelephoneNumber string `json:"telephone_number"`
 }

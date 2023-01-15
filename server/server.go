@@ -3,12 +3,24 @@ package server
 import (
 	"customer-manager/database"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gookit/validate"
 )
 import "customer-manager/repositories"
 
 type CustomerManagerServer struct {
 	App        *fiber.App
 	repository repositories.CustomerRepository
+}
+
+func getValidator(s interface{}) *validate.Validation {
+	validate.Config(func(opt *validate.GlobalOption) {
+		opt.StopOnError = false
+	})
+	v := validate.New(s)
+	v.AddMessages(map[string]string{
+		"required": "The '{field}' is required",
+	})
+	return v
 }
 
 func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRepository) *CustomerManagerServer {
@@ -34,18 +46,9 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 			})
 		}
 
-		errors := fiber.Map{}
-		if c.FirstName == "" { // TODO create custom deserializer with proper validation
-			errors["first_name"] = "this field is required"
-		}
-		if c.LastName == "" {
-			errors["last_name"] = "this field is required"
-		}
-		if c.TelephoneNumber == "" {
-			errors["telephone_number"] = "this field is required"
-		}
-		if len(errors) != 0 {
-			return ctx.Status(fiber.StatusBadRequest).JSON(errors)
+		validator := getValidator(c)
+		if !validator.Validate() {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
 		err, _ = server.repository.Create(c)
