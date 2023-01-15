@@ -8,9 +8,9 @@ import (
 
 type Customer struct {
 	ID              string     `gorm:"primaryKey"                 json:"-"`
-	FirstName       string     `gorm:"uniqueIndex:uniquecustomer" json:"first_name"`
-	LastName        string     `gorm:"uniqueIndex:uniquecustomer" json:"last_name"`
-	TelephoneNumber string     `gorm:"uniqueIndex:uniquecustomer" json:"telephone_number"`
+	FirstName       string     `gorm:"uniqueIndex:uniquecustomer" json:"first_name"       validate:"required"`
+	LastName        string     `gorm:"uniqueIndex:uniquecustomer" json:"last_name"        validate:"required"`
+	TelephoneNumber string     `gorm:"uniqueIndex:uniquecustomer" json:"telephone_number" validate:"required"`
 	CreatedAt       time.Time  `                                  json:"created_at"`
 	UpdatedAt       time.Time  `                                  json:"updated_at"`
 	Purchases       []Purchase `gorm:"foreignKey:CustomerID;"     json:"-"`
