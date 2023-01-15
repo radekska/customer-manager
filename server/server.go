@@ -28,9 +28,26 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 	server.App.Post("/api/customers", func(ctx *fiber.Ctx) error {
 		c := new(database.Customer)
 		err := ctx.BodyParser(c)
-		if err != nil {
-			return err
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
 		}
+
+		errors := fiber.Map{}
+		if c.FirstName == "" {
+			errors["first_name"] = "this field is required"
+		}
+		if c.LastName == "" {
+			errors["last_name"] = "this field is required"
+		}
+		if c.TelephoneNumber == "" {
+			errors["telephone_number"] = "this field is required"
+		}
+		if len(errors) != 0 {
+			return ctx.Status(fiber.StatusBadRequest).JSON(errors)
+		}
+
 		err, _ = server.repository.Create(c)
 		if err != nil {
 			return err

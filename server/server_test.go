@@ -76,4 +76,36 @@ func TestCustomerManagerServer(t *testing.T) {
 		_, currentCustomers := repository.GetAll()
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
+
+	t.Run("test create new customer invalid payload", func(t *testing.T) {
+		repository := &StubCustomerRepository{}
+		server := NewCustomerManagerServer(fiber.New(), repository)
+		body, _ := json.Marshal(map[string]string{"invalid": "invalid"})
+		req, _ := http.NewRequest(http.MethodPost, "/api/customers", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := server.App.Test(req)
+
+		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+		var currentErrorMessage errorMessages
+		err := json.NewDecoder(resp.Body).Decode(&currentErrorMessage)
+		assert.NoError(t, err)
+		assert.Equal(
+			t,
+			errorMessages{
+				FirstName:       "this field is required",
+				LastName:        "this field is required",
+				TelephoneNumber: "this field is required",
+			},
+			currentErrorMessage,
+		)
+		_, currentCustomers := repository.GetAll()
+		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
+	})
+}
+
+type errorMessages struct {
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	TelephoneNumber string `json:"telephone_number"`
 }
