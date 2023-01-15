@@ -7,14 +7,14 @@ import (
 )
 
 type Customer struct {
-	ID              string `gorm:"primaryKey"`
-	FirstName       string `gorm:"uniqueIndex:uniquecustomer"`
-	LastName        string `gorm:"uniqueIndex:uniquecustomer"`
-	TelephoneNumber string `gorm:"uniqueIndex:uniquecustomer"`
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	Purchases       []Purchase `gorm:"foreignKey:CustomerID;"`
-	Repairs         []Repair   `gorm:"foreignKey:CustomerID;"`
+	ID              string     `gorm:"primaryKey"                 json:"-"`
+	FirstName       string     `gorm:"uniqueIndex:uniquecustomer" json:"first_name"`
+	LastName        string     `gorm:"uniqueIndex:uniquecustomer" json:"last_name"`
+	TelephoneNumber string     `gorm:"uniqueIndex:uniquecustomer" json:"telephone_number"`
+	CreatedAt       time.Time  `                                  json:"created_at"`
+	UpdatedAt       time.Time  `                                  json:"updated_at"`
+	Purchases       []Purchase `gorm:"foreignKey:CustomerID;"     json:"-"`
+	Repairs         []Repair   `gorm:"foreignKey:CustomerID;"     json:"-"`
 }
 
 func (u *Customer) BeforeCreate(tx *gorm.DB) (err error) {
