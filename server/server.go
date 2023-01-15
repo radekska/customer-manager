@@ -35,7 +35,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 		}
 
 		errors := fiber.Map{}
-		if c.FirstName == "" {
+		if c.FirstName == "" { // TODO create custom deserializer with proper validation
 			errors["first_name"] = "this field is required"
 		}
 		if c.LastName == "" {
