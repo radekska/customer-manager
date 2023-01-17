@@ -162,7 +162,11 @@ func TestDBCustomerRepository(t *testing.T) {
 	})
 
 	t.Run("test get customer by its id", func(t *testing.T) {
-		err, expectedCustomer := customerRepository.Create(customer)
+		err, expectedCustomer := customerRepository.Create(
+			&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"},
+		)
+		assert.NoError(t, err)
+		err, _ = customerRepository.Create(&database.Customer{FirstName: "Jane", LastName: "Doe", TelephoneNumber: "987456123"})
 		assert.NoError(t, err)
 
 		err, currentCustomer := customerRepository.GetByID(expectedCustomer.ID)
@@ -172,6 +176,21 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.Equal(t, expectedCustomer.FirstName, currentCustomer.FirstName)
 		assert.Equal(t, expectedCustomer.LastName, currentCustomer.LastName)
 		assert.Equal(t, expectedCustomer.TelephoneNumber, currentCustomer.TelephoneNumber)
+
+		clearRecords(t, db)
+	})
+
+	t.Run("test get customer by its id but not found", func(t *testing.T) {
+		err, _ := customerRepository.Create(
+			&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"},
+		)
+		assert.NoError(t, err)
+
+		err, currentCustomer := customerRepository.GetByID("4a923682-b051-47c1-b37a-666544d71419")
+
+		assert.Equal(t, err, gorm.ErrRecordNotFound)
+		assert.Nil(t, currentCustomer)
+		clearRecords(t, db)
 	})
 }
 

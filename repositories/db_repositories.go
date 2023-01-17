@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"customer-manager/database"
+	"errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -26,7 +27,11 @@ func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
 
 func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
 	var customer database.Customer
-	return d.DB.Where("id = ?", customerID).First(&customer).Error, &customer
+	result := d.DB.Where("id = ?", customerID).First(&customer)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return result.Error, nil
+	}
+	return result.Error, &customer
 }
 
 type DBPurchaseRepository struct {

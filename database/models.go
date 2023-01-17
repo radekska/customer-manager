@@ -7,7 +7,7 @@ import (
 )
 
 type Customer struct {
-	ID              string     `gorm:"primaryKey"                 json:"-"`
+	ID              string     `gorm:"primaryKey"                 json:"id"`
 	FirstName       string     `gorm:"uniqueIndex:uniquecustomer" json:"first_name"       validate:"required"`
 	LastName        string     `gorm:"uniqueIndex:uniquecustomer" json:"last_name"        validate:"required"`
 	TelephoneNumber string     `gorm:"uniqueIndex:uniquecustomer" json:"telephone_number" validate:"required"`
