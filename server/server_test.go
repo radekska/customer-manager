@@ -29,6 +29,10 @@ func (s *StubCustomerRepository) GetAll() (error, []database.Customer) {
 	return nil, s.customers
 }
 
+func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
+	return nil, nil
+}
+
 func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
 	t.Helper()
 	var currentCustomers []database.Customer

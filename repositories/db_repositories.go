@@ -24,6 +24,11 @@ func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
 	return result.Error, customers
 }
 
+func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
+	var customer database.Customer
+	return d.DB.Where("id = ?", customerID).First(&customer).Error, &customer
+}
+
 type DBPurchaseRepository struct {
 	db *gorm.DB
 }

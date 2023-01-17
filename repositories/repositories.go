@@ -6,6 +6,7 @@ type CustomerRepository interface {
 	Create(customer *database.Customer) (error, *database.Customer)
 	DeleteByID(customerID string) error
 	GetAll() (error, []database.Customer)
+	GetByID(customerID string) (error, *database.Customer)
 }
 
 type PurchaseRepository interface {

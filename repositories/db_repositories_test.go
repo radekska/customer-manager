@@ -160,6 +160,19 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, dbCustomers, 0)
 	})
+
+	t.Run("test get customer by its id", func(t *testing.T) {
+		err, expectedCustomer := customerRepository.Create(customer)
+		assert.NoError(t, err)
+
+		err, currentCustomer := customerRepository.GetByID(expectedCustomer.ID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedCustomer.ID, currentCustomer.ID)
+		assert.Equal(t, expectedCustomer.FirstName, currentCustomer.FirstName)
+		assert.Equal(t, expectedCustomer.LastName, currentCustomer.LastName)
+		assert.Equal(t, expectedCustomer.TelephoneNumber, currentCustomer.TelephoneNumber)
+	})
 }
 
 func TestDBPurchaseRepository(t *testing.T) {
