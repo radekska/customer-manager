@@ -2,7 +2,9 @@ package server
 
 import (
 	"customer-manager/database"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/gookit/validate"
 )
 import "customer-manager/repositories"
@@ -34,7 +36,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 			return fiber.ErrInternalServerError
 		}
 
-		return ctx.JSON(customers)
+		return ctx.Status(fiber.StatusOK).JSON(customers)
 	})
 
 	server.App.Post("/api/customers", func(ctx *fiber.Ctx) error {
@@ -57,6 +59,23 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 		}
 		ctx.Status(fiber.StatusCreated)
 		return nil
+	})
+
+	server.App.Get("/api/customers/:customerID", func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		_, customer := server.repository.GetByID(customerID)
+		if customer == nil {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+		return ctx.Status(fiber.StatusOK).JSON(customer)
 	})
 
 	return server
