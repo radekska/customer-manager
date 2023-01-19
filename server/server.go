@@ -78,5 +78,36 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 		return ctx.Status(fiber.StatusOK).JSON(customer)
 	})
 
+	server.App.Put("/api/customers/:customerID", func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		e := new(editCustomerDetailsRequest)
+		err = ctx.BodyParser(e)
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
+		}
+		validator := getValidator(e)
+		if !validator.Validate() {
+			fmt.Println(validator.Errors)
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		}
+
+		return ctx.Status(fiber.StatusOK).JSON(map[string]string{
+			"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
+			"first_name":       "John",
+			"last_name":        "Doe",
+			"telephone_number": "367654567",
+			"created_at":       "0001-01-01T00:00:00Z",
+			"updated_at":       "0001-01-01T00:00:00Z",
+		})
+	})
+
 	return server
 }
