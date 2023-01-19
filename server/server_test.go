@@ -49,6 +49,15 @@ func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
 	return currentCustomers
 }
 
+func assertCustomerDetailsResponse(t *testing.T, resp *http.Response, expectedCustomerDetails map[string]string) {
+	t.Helper()
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	actualCustomerDetails := make(map[string]string)
+	err := json.NewDecoder(resp.Body).Decode(&actualCustomerDetails)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedCustomerDetails, actualCustomerDetails)
+}
+
 func TestCustomerManagerServer(t *testing.T) {
 	customer := database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123-456-789"}
 
@@ -111,7 +120,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test create new customer invalid payload", func(t *testing.T) {
 		repository := &StubCustomerRepository{}
 		server := NewCustomerManagerServer(fiber.New(), repository)
-		body, _ := json.Marshal(map[string]string{"invalid": "invalid"})
+		body, _ := json.Marshal(map[string]string{"invalid": "invalid"}) // TODO test unique tel. number
 		req, _ := http.NewRequest(http.MethodPost, "/api/customers", bytes.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 
@@ -150,20 +159,16 @@ func TestCustomerManagerServer(t *testing.T) {
 		resp, _ := server.App.Test(req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
-
-		actualCustomer := make(map[string]string)
-		err := json.NewDecoder(resp.Body).Decode(&actualCustomer)
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{
+		assertCustomerDetailsResponse(t, resp, map[string]string{
 			"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
 			"first_name":       "Bob",
 			"last_name":        "Toe",
 			"telephone_number": "367654567",
 			"created_at":       "0001-01-01T00:00:00Z",
 			"updated_at":       "0001-01-01T00:00:00Z",
-		}, actualCustomer)
+		})
 	})
+
 	t.Run("test get customer by its id but not found", func(t *testing.T) {
 		repository := &StubCustomerRepository{
 			customers: []database.Customer{
@@ -204,6 +209,45 @@ func TestCustomerManagerServer(t *testing.T) {
 		assert.Equal(t, map[string]string{
 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidCustomerID),
 		}, errorMessage)
+	})
+
+	t.Run("test edit customer details", func(t *testing.T) {
+		server := NewCustomerManagerServer(
+			fiber.New(),
+			&StubCustomerRepository{customers: []database.Customer{
+				{
+					ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+					FirstName:       "Bob",
+					LastName:        "Toe",
+					TelephoneNumber: "367654567",
+				},
+			}},
+		)
+		body, _ := json.Marshal(
+			map[string]string{
+				"first_name":       "John",
+				"last_name":        "Doe",
+				"telephone_number": "123456891",
+			},
+		)
+		req, _ := http.NewRequest(
+			http.MethodPut,
+			fmt.Sprintf("/api/customers/%s", "8a5cae65-222c-4164-a08b-9983af7e366c"),
+			bytes.NewBuffer(body),
+		)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, _ := server.App.Test(req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+		assertCustomerDetailsResponse(t, resp, map[string]string{
+			"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
+			"first_name":       "John",
+			"last_name":        "Doe",
+			"telephone_number": "367654567",
+			"created_at":       "0001-01-01T00:00:00Z",
+			"updated_at":       "0001-01-01T00:00:00Z",
+		})
 	})
 
 }
