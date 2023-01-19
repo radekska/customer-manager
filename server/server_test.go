@@ -39,6 +39,17 @@ func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Cu
 	return errors.New("customer not found"), nil
 }
 
+func (s *StubCustomerRepository) Update(customerDetails *database.Customer) (error, *database.Customer) {
+	err, customer := s.GetByID(customerDetails.ID)
+	if err != nil {
+		return err, nil
+	}
+	customer.FirstName = customerDetails.FirstName
+	customer.LastName = customerDetails.LastName
+	customer.TelephoneNumber = customerDetails.TelephoneNumber
+	return nil, customer
+}
+
 func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
 	t.Helper()
 	var currentCustomers []database.Customer
@@ -244,10 +255,18 @@ func TestCustomerManagerServer(t *testing.T) {
 			"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
 			"first_name":       "John",
 			"last_name":        "Doe",
-			"telephone_number": "367654567",
+			"telephone_number": "123456891",
 			"created_at":       "0001-01-01T00:00:00Z",
 			"updated_at":       "0001-01-01T00:00:00Z",
 		})
+	})
+
+	t.Run("test edit customer details invalid id", func(t *testing.T) {
+		// TODO
+	})
+
+	t.Run("test edit customer details but not found", func(t *testing.T) {
+		// TODO
 	})
 
 }

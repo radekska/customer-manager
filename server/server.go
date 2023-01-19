@@ -101,6 +101,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 
 		_, customer := server.repository.Update(
 			&database.Customer{
+				ID:              customerID,
 				FirstName:       newCustomerDetails.FirstName,
 				LastName:        newCustomerDetails.LastName,
 				TelephoneNumber: newCustomerDetails.TelephoneNumber,
