@@ -86,27 +86,33 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
 			})
 		}
-		e := new(editCustomerDetailsRequest)
-		err = ctx.BodyParser(e)
+		newCustomerDetails := new(editCustomerDetailsRequest)
+		err = ctx.BodyParser(newCustomerDetails)
 		if err == fiber.ErrUnprocessableEntity {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"errors": err.Error(),
 			})
 		}
-		validator := getValidator(e)
+		validator := getValidator(newCustomerDetails)
 		if !validator.Validate() {
 			fmt.Println(validator.Errors)
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
-		return ctx.Status(fiber.StatusOK).JSON(map[string]string{
-			"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
-			"first_name":       "John",
-			"last_name":        "Doe",
-			"telephone_number": "367654567",
-			"created_at":       "0001-01-01T00:00:00Z",
-			"updated_at":       "0001-01-01T00:00:00Z",
-		})
+		_, customer := server.repository.Update(
+			&database.Customer{
+				FirstName:       newCustomerDetails.FirstName,
+				LastName:        newCustomerDetails.LastName,
+				TelephoneNumber: newCustomerDetails.TelephoneNumber,
+			},
+		)
+		if customer == nil {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+
+		return ctx.Status(fiber.StatusOK).JSON(customer)
 	})
 
 	return server
