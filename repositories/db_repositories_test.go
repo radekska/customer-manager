@@ -139,7 +139,12 @@ func TestDBCustomerRepository(t *testing.T) {
 		}
 		for _, customerData := range customersData {
 			err, customer := customerRepository.Create(
-				&database.Customer{FirstName: customerData.FirstName, LastName: customerData.LastName})
+				&database.Customer{
+					FirstName:       customerData.FirstName,
+					LastName:        customerData.LastName,
+					TelephoneNumber: customerData.TelephoneNumber,
+				},
+			)
 			assert.NoError(t, err)
 			customers = append(customers, *customer)
 		}
