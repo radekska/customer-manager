@@ -34,6 +34,14 @@ func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Cust
 	return result.Error, &customer
 }
 
+func (d *DBCustomerRepository) Update(customer *database.Customer) (error, *database.Customer) {
+	result := d.DB.Model(customer).Select("FirstName", "LastName", "TelephoneNumber").Updates(customer)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return result.Error, nil
+	}
+	return result.Error, customer
+}
+
 type DBPurchaseRepository struct {
 	db *gorm.DB
 }
