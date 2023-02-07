@@ -139,7 +139,12 @@ func TestDBCustomerRepository(t *testing.T) {
 		}
 		for _, customerData := range customersData {
 			err, customer := customerRepository.Create(
-				&database.Customer{FirstName: customerData.FirstName, LastName: customerData.LastName})
+				&database.Customer{
+					FirstName:       customerData.FirstName,
+					LastName:        customerData.LastName,
+					TelephoneNumber: customerData.TelephoneNumber,
+				},
+			)
 			assert.NoError(t, err)
 			customers = append(customers, *customer)
 		}
@@ -192,6 +197,31 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.Nil(t, currentCustomer)
 		clearRecords(t, db)
 	})
+
+	t.Run("test edit customer details", func(t *testing.T) {
+		err, existingCustomer := customerRepository.Create(
+			&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"},
+		)
+		assert.NoError(t, err)
+		updatedCustomer := &database.Customer{
+			ID:              existingCustomer.ID,
+			FirstName:       "Bob",
+			LastName:        "Toe",
+			TelephoneNumber: "897564321",
+		}
+
+		err, returnedCustomer := customerRepository.Update(updatedCustomer)
+
+		_, dbCustomer := customerRepository.GetByID(returnedCustomer.ID)
+		assertCustomer(t, updatedCustomer, dbCustomer)
+		assertCustomer(t, updatedCustomer, returnedCustomer)
+		clearRecords(t, db)
+	})
+
+	t.Run("test edit customer details but not found", func(t *testing.T) {
+		// TODO
+	})
+
 }
 
 func TestDBPurchaseRepository(t *testing.T) {
