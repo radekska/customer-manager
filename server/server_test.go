@@ -194,6 +194,22 @@ func TestCustomerManagerServer(t *testing.T) {
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
 
+	t.Run("test create new customer invalid content-type header", func(t *testing.T) {
+		invalidContentType := "text/html"
+		server.repository = &StubCustomerRepository{}
+		req := createRequest(t, http.MethodPost, "/api/customers", nil)
+		req.Header.Set("Content-Type", invalidContentType)
+
+		resp := getResponse(t, server, req)
+
+		assertBadRequestResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf(
+				"invalid content-type header specified: '%s', allowed: 'application/json'",
+				invalidContentType,
+			),
+		})
+	})
+
 	t.Run("test get customer by its id", func(t *testing.T) {
 		server.repository = &StubCustomerRepository{
 			customers: []database.Customer{
@@ -324,6 +340,26 @@ func TestCustomerManagerServer(t *testing.T) {
 
 		assertNotFoundResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("customer with given id '%s' does not exists", invalidCustomerID),
+		})
+	})
+
+	t.Run("test  edit customer details invalid content-type header", func(t *testing.T) {
+		invalidContentType := "text/html"
+		server.repository = &StubCustomerRepository{
+			customers: []database.Customer{
+				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
+			},
+		}
+		req := createRequest(t, http.MethodPut, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
+		req.Header.Set("Content-Type", invalidContentType)
+
+		resp := getResponse(t, server, req)
+
+		assertBadRequestResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf(
+				"invalid content-type header specified: '%s', allowed: 'application/json'",
+				invalidContentType,
+			),
 		})
 	})
 
