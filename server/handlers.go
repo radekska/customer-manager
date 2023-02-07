@@ -20,20 +20,26 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 
 func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		c := new(database.Customer)
-		err := ctx.BodyParser(c)
+		newCustomer := new(createCustomerRequest)
+		err := ctx.BodyParser(newCustomer)
 		if err == fiber.ErrUnprocessableEntity {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"errors": err.Error(),
 			})
 		}
 
-		validator := getValidator(c)
+		validator := getValidator(newCustomer)
 		if !validator.Validate() {
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
-		err, _ = server.repository.Create(c)
+		err, _ = server.repository.Create(
+			&database.Customer{
+				FirstName:       newCustomer.FirstName,
+				LastName:        newCustomer.LastName,
+				TelephoneNumber: newCustomer.TelephoneNumber,
+			},
+		)
 		if err != nil {
 			// TODO - fix DB error message 'UNIQUE constraint failed: customers.telephone_number'
 			return err
