@@ -54,12 +54,20 @@ func createRequest(t *testing.T, method string, path string, body io.Reader) *ht
 	t.Helper()
 	req, err := http.NewRequest(method, path, body)
 	if err != nil {
-		t.Fatal("failed during request creation.")
+		t.Fatal("failed during request creation.", err)
 	}
 	if method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	return req
+}
+
+func getResponse(t *testing.T, server *CustomerManagerServer, request *http.Request) *http.Response {
+	resp, err := server.App.Test(request)
+	if err != nil {
+		t.Fatal("failed to get a response.", err)
+	}
+	return resp
 }
 
 func decodeCustomers(t *testing.T, body io.Reader) []database.Customer {
@@ -81,17 +89,39 @@ func assertCustomerDetailsResponse(t *testing.T, resp *http.Response, expectedCu
 	assert.Equal(t, expectedCustomerDetails, actualCustomerDetails)
 }
 
+func assertResponse(t *testing.T, resp *http.Response, expectedDetails map[string]string) {
+	t.Helper()
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	actualDetails := make(map[string]string)
+	err := json.NewDecoder(resp.Body).Decode(&actualDetails)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedDetails, actualDetails)
+}
+
+func assertBadRequestResponse(t *testing.T, resp *http.Response, expectedDetails map[string]string) {
+	t.Helper()
+	assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+	assertResponse(t, resp, expectedDetails)
+}
+
+func assertNotFoundResponse(t *testing.T, resp *http.Response, expectedDetails map[string]string) {
+	t.Helper()
+	assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
+	assertResponse(t, resp, expectedDetails)
+}
+
 func TestCustomerManagerServer(t *testing.T) {
 	customer := database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123-456-789"}
+	server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{})
 
 	t.Run("test get all customers", func(t *testing.T) {
-		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{customers: []database.Customer{
+		server.repository = &StubCustomerRepository{customers: []database.Customer{
 			{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
 			{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
-		}})
+		}}
 		req := createRequest(t, http.MethodGet, "/api/customers", nil)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 		var actualCustomers []map[string]string
@@ -117,35 +147,33 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test get no customers as empty repository", func(t *testing.T) {
 		var expectedCustomers []database.Customer
-		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{customers: expectedCustomers})
+		server.repository = &StubCustomerRepository{customers: expectedCustomers}
 		req := createRequest(t, http.MethodGet, "/api/customers", nil)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 		assert.ElementsMatch(t, expectedCustomers, decodeCustomers(t, resp.Body))
 	})
 
 	t.Run("test create new customer", func(t *testing.T) {
-		repository := &StubCustomerRepository{}
-		server := NewCustomerManagerServer(fiber.New(), repository)
+		server.repository = &StubCustomerRepository{}
 		body, _ := json.Marshal(&customer)
 		req := createRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
-		_, currentCustomers := repository.GetAll()
+		_, currentCustomers := server.repository.GetAll()
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
 
 	t.Run("test create new customer invalid payload", func(t *testing.T) {
-		repository := &StubCustomerRepository{}
-		server := NewCustomerManagerServer(fiber.New(), repository)
+		server.repository = &StubCustomerRepository{}
 		body, _ := json.Marshal(map[string]string{"invalid": "invalid"}) // TODO test unique tel. number
 		req := createRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
 		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
@@ -162,22 +190,20 @@ func TestCustomerManagerServer(t *testing.T) {
 			},
 			actualErrorMessage,
 		)
-
-		_, currentCustomers := repository.GetAll()
+		_, currentCustomers := server.repository.GetAll()
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
 
 	t.Run("test get customer by its id", func(t *testing.T) {
-		repository := &StubCustomerRepository{
+		server.repository = &StubCustomerRepository{
 			customers: []database.Customer{
 				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
 				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
 			},
 		}
-		server := NewCustomerManagerServer(fiber.New(), repository)
 		req := createRequest(t, http.MethodGet, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 		assertCustomerDetailsResponse(t, resp, map[string]string{
@@ -191,59 +217,43 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test get customer by its id but not found", func(t *testing.T) {
-		repository := &StubCustomerRepository{
+		server.repository = &StubCustomerRepository{
 			customers: []database.Customer{
 				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
 			},
 		}
 		invalidCustomerID := "8a5cae65-222c-4164-a08b-9983af7e366c"
-		server := NewCustomerManagerServer(fiber.New(), repository)
 		req := createRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
-		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
-
-		errorMessage := make(map[string]string)
-		err := json.NewDecoder(resp.Body).Decode(&errorMessage)
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{
+		assertNotFoundResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("customer with given id '%s' does not exists", invalidCustomerID),
-		}, errorMessage)
+		})
 	})
 
 	t.Run("test get customer by invalid id", func(t *testing.T) {
-		repository := &StubCustomerRepository{}
+		server.repository = &StubCustomerRepository{}
 		invalidCustomerID := "im-not-uuid"
-		server := NewCustomerManagerServer(fiber.New(), repository)
 		req := createRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
-
-		errorMessage := make(map[string]string)
-		err := json.NewDecoder(resp.Body).Decode(&errorMessage)
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{
+		assertBadRequestResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidCustomerID),
-		}, errorMessage)
+		})
 	})
 
 	t.Run("test edit customer details", func(t *testing.T) {
-		server := NewCustomerManagerServer(
-			fiber.New(),
-			&StubCustomerRepository{customers: []database.Customer{
-				{
-					ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
-					FirstName:       "Bob",
-					LastName:        "Toe",
-					TelephoneNumber: "367654567",
-				},
-			}},
-		)
+		server.repository = &StubCustomerRepository{customers: []database.Customer{
+			{
+				ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+				FirstName:       "Bob",
+				LastName:        "Toe",
+				TelephoneNumber: "367654567",
+			},
+		}}
+
 		body, _ := json.Marshal(
 			map[string]string{
 				"first_name":       "John",
@@ -258,7 +268,7 @@ func TestCustomerManagerServer(t *testing.T) {
 			bytes.NewBuffer(body),
 		)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 		assertCustomerDetailsResponse(t, resp, map[string]string{
@@ -273,7 +283,7 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test edit customer details invalid id", func(t *testing.T) {
 		invalidCustomerID := "im-not-uuid"
-		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{})
+		server.repository = &StubCustomerRepository{}
 		req := createRequest(
 			t,
 			http.MethodPut,
@@ -281,27 +291,20 @@ func TestCustomerManagerServer(t *testing.T) {
 			bytes.NewBuffer([]byte{}),
 		)
 
-		resp, _ := server.App.Test(req)
+		resp := getResponse(t, server, req)
 
-		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
-		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
-
-		errorMessage := make(map[string]string)
-		err := json.NewDecoder(resp.Body).Decode(&errorMessage)
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{
+		assertBadRequestResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidCustomerID),
-		}, errorMessage)
+		})
 	})
 
 	t.Run("test edit customer details but not found", func(t *testing.T) {
 		invalidCustomerID := "5936ca64-3c2c-4ada-89f9-27fece73a0a8"
-		repository := &StubCustomerRepository{
+		server.repository = &StubCustomerRepository{
 			customers: []database.Customer{
 				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
 			},
 		}
-		server := NewCustomerManagerServer(fiber.New(), repository)
 		body, err := json.Marshal(
 			map[string]string{
 				"first_name":       "John",
@@ -317,18 +320,11 @@ func TestCustomerManagerServer(t *testing.T) {
 			bytes.NewBuffer(body),
 		)
 
-		assert.NoError(t, err)
+		resp := getResponse(t, server, req)
 
-		resp, err := server.App.Test(req)
-
-		assert.NoError(t, err)
-		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
-		errorMessage := make(map[string]string)
-		err = json.NewDecoder(resp.Body).Decode(&errorMessage)
-		assert.NoError(t, err)
-		assert.Equal(t, map[string]string{
+		assertNotFoundResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("customer with given id '%s' does not exists", invalidCustomerID),
-		}, errorMessage)
+		})
 	})
 
 }
