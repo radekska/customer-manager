@@ -40,6 +40,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 	})
 
 	server.App.Post("/api/customers", func(ctx *fiber.Ctx) error {
+		// TODO check for proper content-type header and inform when invalid.
 		c := new(database.Customer)
 		err := ctx.BodyParser(c)
 		if err == fiber.ErrUnprocessableEntity {
@@ -79,7 +80,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 	})
 
 	server.App.Put("/api/customers/:customerID", func(ctx *fiber.Ctx) error {
-		// check for proper content-type header and inform when invalid.
+		// TODO check for proper content-type header and inform when invalid.
 		customerID := ctx.Params("customerID")
 		_, err := uuid.Parse(customerID)
 		if err != nil {
