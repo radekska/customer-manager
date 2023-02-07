@@ -35,6 +35,7 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 
 		err, _ = server.repository.Create(c)
 		if err != nil {
+			// TODO - fix DB error message 'UNIQUE constraint failed: customers.telephone_number'
 			return err
 		}
 		ctx.Status(fiber.StatusCreated)
@@ -96,7 +97,7 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
 			})
 		}
-
+		// TODO during update the "created_at": "0001-01-01T00:00:00Z" is zeroed
 		return ctx.Status(fiber.StatusOK).JSON(customer)
 	}
 }
