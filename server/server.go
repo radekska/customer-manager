@@ -79,6 +79,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 	})
 
 	server.App.Put("/api/customers/:customerID", func(ctx *fiber.Ctx) error {
+		// check for proper content-type header and inform when invalid.
 		customerID := ctx.Params("customerID")
 		_, err := uuid.Parse(customerID)
 		if err != nil {

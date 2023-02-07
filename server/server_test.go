@@ -262,11 +262,62 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test edit customer details invalid id", func(t *testing.T) {
-		// TODO
+		invalidCustomerID := "im-not-uuid"
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{})
+		req, _ := http.NewRequest(
+			http.MethodPut,
+			fmt.Sprintf("/api/customers/%s", invalidCustomerID),
+			bytes.NewBuffer([]byte{}),
+		)
+
+		resp, _ := server.App.Test(req)
+
+		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+		assert.Equal(t, resp.Header.Get("Content-Type"), "application/json")
+
+		errorMessage := make(map[string]string)
+		err := json.NewDecoder(resp.Body).Decode(&errorMessage)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidCustomerID),
+		}, errorMessage)
 	})
 
 	t.Run("test edit customer details but not found", func(t *testing.T) {
-		// TODO
+		invalidCustomerID := "5936ca64-3c2c-4ada-89f9-27fece73a0a8"
+		repository := &StubCustomerRepository{
+			customers: []database.Customer{
+				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
+			},
+		}
+		server := NewCustomerManagerServer(fiber.New(), repository)
+		body, err := json.Marshal(
+			map[string]string{
+				"first_name":       "John",
+				"last_name":        "Doe",
+				"telephone_number": "123456891",
+			},
+		)
+		assert.NoError(t, err)
+		req, err := http.NewRequest(
+			http.MethodPut,
+			fmt.Sprintf("/api/customers/%s", invalidCustomerID),
+			bytes.NewBuffer(body),
+		)
+		req.Header.Set("Content-Type", "application/json")
+
+		assert.NoError(t, err)
+
+		resp, err := server.App.Test(req)
+
+		assert.NoError(t, err)
+		assert.Equal(t, fiber.StatusNotFound, resp.StatusCode)
+		errorMessage := make(map[string]string)
+		err = json.NewDecoder(resp.Body).Decode(&errorMessage)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"detail": fmt.Sprintf("customer with given id '%s' does not exists", invalidCustomerID),
+		}, errorMessage)
 	})
 
 }
