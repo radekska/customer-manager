@@ -29,8 +29,8 @@ type Purchase struct {
 	LensPower  string
 	PD         string
 	CustomerID string
-	Customer   Customer
-	CreatedAt  time.Time
+	// Customer   Customer
+	CreatedAt time.Time
 }
 
 func (p *Purchase) BeforeCreate(tx *gorm.DB) (err error) {

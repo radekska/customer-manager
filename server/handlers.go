@@ -2,6 +2,8 @@ package server
 
 import (
 	"customer-manager/database"
+	"customer-manager/repositories"
+	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -105,6 +107,31 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 		}
 		// TODO during update the "created_at": "0001-01-01T00:00:00Z" is zeroed
 		return ctx.Status(fiber.StatusOK).JSON(customer)
+	}
+}
+
+func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		if err := server.repository.DeleteByID(customerID); err != nil {
+			target := &repositories.CustomerNotFoundError{}
+			if errors.As(err, &target) {
+				return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+				})
+			}
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"detail": err,
+			})
+		}
+		ctx.Status(fiber.StatusNoContent)
+		return nil
 	}
 }
 

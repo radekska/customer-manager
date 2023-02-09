@@ -21,5 +21,7 @@ func NewCustomerManagerServer(app *fiber.App, repository repositories.CustomerRe
 	server.App.Post(customersPath, createCustomerHandler(server))
 	server.App.Get(customersPath+"/:customerID", getCustomerByIDHandler(server))
 	server.App.Put(customersPath+"/:customerID", editCustomerByIDHandler(server))
+	server.App.Delete(customersPath+"/:customerID", deleteCustomerByIDHandler(server))
+
 	return server
 }

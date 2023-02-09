@@ -3,6 +3,7 @@ package repositories
 import (
 	"customer-manager/database"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -11,12 +12,27 @@ type DBCustomerRepository struct {
 	DB *gorm.DB
 }
 
+type CustomerNotFoundError struct {
+	CustomerID string
+}
+
+func (c *CustomerNotFoundError) Error() string {
+	return fmt.Sprintf("customer with ID '%s' does not exist", c.CustomerID)
+}
+
 func (d *DBCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
 	return d.DB.Create(&customer).Error, customer
 }
 
 func (d *DBCustomerRepository) DeleteByID(customerID string) error {
-	return d.DB.Select(clause.Associations).Delete(&database.Customer{ID: customerID}).Error
+	result := d.DB.Select(clause.Associations).Delete(&database.Customer{ID: customerID})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return &CustomerNotFoundError{CustomerID: customerID}
+	}
+	return nil
 }
 
 func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
@@ -29,7 +45,7 @@ func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Cust
 	var customer database.Customer
 	result := d.DB.Where("id = ?", customerID).First(&customer)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error, nil
+		return &CustomerNotFoundError{CustomerID: customerID}, nil
 	}
 	return result.Error, &customer
 }
@@ -37,7 +53,7 @@ func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Cust
 func (d *DBCustomerRepository) Update(customer *database.Customer) (error, *database.Customer) {
 	result := d.DB.Model(customer).Select("FirstName", "LastName", "TelephoneNumber").Updates(customer)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error, nil
+		return &CustomerNotFoundError{CustomerID: customer.ID}, nil
 	}
 	return result.Error, customer
 }
