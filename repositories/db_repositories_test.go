@@ -124,9 +124,10 @@ func TestDBCustomerRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
-	t.Run("test delete customer indempotently", func(t *testing.T) {
-		err := customerRepository.DeleteByID(uuid.NewString())
-		assert.NoError(t, err)
+	t.Run("test delete not existing customer", func(t *testing.T) {
+		invalidID := uuid.NewString()
+		err := customerRepository.DeleteByID(invalidID)
+		assert.Equal(t, err, &CustomerNotFoundError{CustomerID: invalidID})
 		assert.Equal(t, 0, len(getAllCustomers(t, db)))
 	})
 
@@ -186,14 +187,15 @@ func TestDBCustomerRepository(t *testing.T) {
 	})
 
 	t.Run("test get customer by its id but not found", func(t *testing.T) {
+		invalidID := "4a923682-b051-47c1-b37a-666544d71419"
 		err, _ := customerRepository.Create(
 			&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"},
 		)
 		assert.NoError(t, err)
 
-		err, currentCustomer := customerRepository.GetByID("4a923682-b051-47c1-b37a-666544d71419")
+		err, currentCustomer := customerRepository.GetByID(invalidID)
 
-		assert.Equal(t, err, gorm.ErrRecordNotFound)
+		assert.Equal(t, err, &CustomerNotFoundError{CustomerID: invalidID})
 		assert.Nil(t, currentCustomer)
 		clearRecords(t, db)
 	})

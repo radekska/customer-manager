@@ -3,8 +3,8 @@ package server
 import (
 	"bytes"
 	"customer-manager/database"
+	"customer-manager/repositories"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +23,16 @@ func (s *StubCustomerRepository) Create(customer *database.Customer) (error, *da
 }
 
 func (s *StubCustomerRepository) DeleteByID(customerID string) error {
+	err, customerToDelete := s.GetByID(customerID)
+	if err != nil {
+		return err
+	}
+	for index, customer := range s.customers {
+		if customer.ID == customerToDelete.ID {
+			s.customers = append(s.customers[:index], s.customers[index+1:]...)
+			return nil
+		}
+	}
 	return nil
 }
 
@@ -36,7 +46,7 @@ func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Cu
 			return nil, &customer
 		}
 	}
-	return errors.New("customer not found"), nil
+	return &repositories.CustomerNotFoundError{CustomerID: customerID}, nil
 }
 
 func (s *StubCustomerRepository) Update(customerDetails *database.Customer) (error, *database.Customer) {
@@ -50,7 +60,7 @@ func (s *StubCustomerRepository) Update(customerDetails *database.Customer) (err
 	return nil, customer
 }
 
-func createRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
+func makeRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
 	t.Helper()
 	req, err := http.NewRequest(method, path, body)
 	if err != nil {
@@ -119,7 +129,7 @@ func TestCustomerManagerServer(t *testing.T) {
 			{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
 			{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
 		}}
-		req := createRequest(t, http.MethodGet, "/api/customers", nil)
+		req := makeRequest(t, http.MethodGet, "/api/customers", nil)
 
 		resp := getResponse(t, server, req)
 
@@ -148,7 +158,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test get no customers as empty repository", func(t *testing.T) {
 		var expectedCustomers []database.Customer
 		server.repository = &StubCustomerRepository{customers: expectedCustomers}
-		req := createRequest(t, http.MethodGet, "/api/customers", nil)
+		req := makeRequest(t, http.MethodGet, "/api/customers", nil)
 
 		resp := getResponse(t, server, req)
 
@@ -159,7 +169,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test create new customer", func(t *testing.T) {
 		server.repository = &StubCustomerRepository{}
 		body, _ := json.Marshal(&customer)
-		req := createRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
+		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
 		resp := getResponse(t, server, req)
 
@@ -171,7 +181,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test create new customer invalid payload", func(t *testing.T) {
 		server.repository = &StubCustomerRepository{}
 		body, _ := json.Marshal(map[string]string{"invalid": "invalid"}) // TODO test unique tel. number
-		req := createRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
+		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
 		resp := getResponse(t, server, req)
 
@@ -197,7 +207,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test create new customer invalid content-type header", func(t *testing.T) {
 		invalidContentType := "text/html"
 		server.repository = &StubCustomerRepository{}
-		req := createRequest(t, http.MethodPost, "/api/customers", nil)
+		req := makeRequest(t, http.MethodPost, "/api/customers", nil)
 		req.Header.Set("Content-Type", invalidContentType)
 
 		resp := getResponse(t, server, req)
@@ -217,7 +227,7 @@ func TestCustomerManagerServer(t *testing.T) {
 				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
 			},
 		}
-		req := createRequest(t, http.MethodGet, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
+		req := makeRequest(t, http.MethodGet, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
 
 		resp := getResponse(t, server, req)
 
@@ -239,7 +249,7 @@ func TestCustomerManagerServer(t *testing.T) {
 			},
 		}
 		invalidCustomerID := "8a5cae65-222c-4164-a08b-9983af7e366c"
-		req := createRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
+		req := makeRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
 
 		resp := getResponse(t, server, req)
 
@@ -251,7 +261,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test get customer by invalid id", func(t *testing.T) {
 		server.repository = &StubCustomerRepository{}
 		invalidCustomerID := "im-not-uuid"
-		req := createRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
+		req := makeRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
 
 		resp := getResponse(t, server, req)
 
@@ -277,7 +287,7 @@ func TestCustomerManagerServer(t *testing.T) {
 				"telephone_number": "123456891",
 			},
 		)
-		req := createRequest(
+		req := makeRequest(
 			t,
 			http.MethodPut,
 			fmt.Sprintf("/api/customers/%s", "8a5cae65-222c-4164-a08b-9983af7e366c"),
@@ -300,7 +310,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	t.Run("test edit customer details invalid id", func(t *testing.T) {
 		invalidCustomerID := "im-not-uuid"
 		server.repository = &StubCustomerRepository{}
-		req := createRequest(
+		req := makeRequest(
 			t,
 			http.MethodPut,
 			fmt.Sprintf("/api/customers/%s", invalidCustomerID),
@@ -329,7 +339,7 @@ func TestCustomerManagerServer(t *testing.T) {
 			},
 		)
 		assert.NoError(t, err)
-		req := createRequest(
+		req := makeRequest(
 			t,
 			http.MethodPut,
 			fmt.Sprintf("/api/customers/%s", invalidCustomerID),
@@ -350,7 +360,7 @@ func TestCustomerManagerServer(t *testing.T) {
 				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
 			},
 		}
-		req := createRequest(t, http.MethodPut, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
+		req := makeRequest(t, http.MethodPut, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
 		req.Header.Set("Content-Type", invalidContentType)
 
 		resp := getResponse(t, server, req)
@@ -360,6 +370,85 @@ func TestCustomerManagerServer(t *testing.T) {
 				"invalid content-type header specified: '%s', allowed: 'application/json'",
 				invalidContentType,
 			),
+		})
+	})
+
+	t.Run("test delete customer and it's relations", func(t *testing.T) {
+		customerOneID := "8a5cae65-222c-4164-a08b-9983af7e366c"
+		customerTwo := database.Customer{
+			ID:              "aba3a29f-f8c4-4173-acc0-b01a2f18c1bb",
+			FirstName:       "John",
+			LastName:        "Brown",
+			TelephoneNumber: "12345",
+		}
+		server.repository = &StubCustomerRepository{
+			customers: []database.Customer{
+				{
+					ID:              customerOneID,
+					FirstName:       "Bob",
+					LastName:        "Toe",
+					TelephoneNumber: "367654567",
+					Purchases: []database.Purchase{
+						{
+							ID:         "d11aeae2-d18a-4b6f-8ed5-2223c015adfd",
+							FrameModel: "Solano",
+							CustomerID: customerOneID,
+						},
+					},
+					Repairs: []database.Repair{
+						{
+							ID:          "b483c02c-d4d0-4da9-8601-50a72c1eac14",
+							Description: "Repair 1",
+							Cost:        123.34,
+							CustomerID:  customerOneID,
+						},
+					},
+				},
+				customerTwo,
+			},
+		}
+		req := makeRequest(t, http.MethodDelete, fmt.Sprintf("/api/customers/%s", customerOneID), bytes.NewBuffer([]byte{}))
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
+		err, customers := server.repository.GetAll()
+		assert.NoError(t, err)
+		assert.Equal(t, []database.Customer{customerTwo}, customers)
+		assert.Equal(t, "", resp.Header.Get("Content-Type"))
+	})
+
+	t.Run("test delete customer but not found", func(t *testing.T) {
+		invalidID := "37567fea-71ab-4677-9b19-708370034a66"
+		server.repository = &StubCustomerRepository{}
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/%s", invalidID),
+			bytes.NewBuffer([]byte{}),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assertNotFoundResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf("customer with given id '%s' does not exists", invalidID),
+		})
+	})
+
+	t.Run("test delete customer but invalid id", func(t *testing.T) {
+		invalidID := "invalid-id"
+		server.repository = &StubCustomerRepository{}
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/%s", invalidID),
+			bytes.NewBuffer([]byte{}),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assertBadRequestResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidID),
 		})
 	})
 
