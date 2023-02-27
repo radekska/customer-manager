@@ -12,7 +12,7 @@ import (
 
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		err, customers := server.repository.GetAll()
+		err, customers := server.customerRepository.GetAll()
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
@@ -35,7 +35,7 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
-		err, _ = server.repository.Create(
+		err, _ = server.customerRepository.Create(
 			&database.Customer{
 				FirstName:       newCustomer.FirstName,
 				LastName:        newCustomer.LastName,
@@ -60,7 +60,7 @@ func getCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
 			})
 		}
-		_, customer := server.repository.GetByID(customerID)
+		_, customer := server.customerRepository.GetByID(customerID)
 		if customer == nil {
 			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
@@ -92,7 +92,7 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
-		_, customer := server.repository.Update(
+		_, customer := server.customerRepository.Update(
 			&database.Customer{
 				ID:              customerID,
 				FirstName:       newCustomerDetails.FirstName,
@@ -119,7 +119,7 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
 			})
 		}
-		if err := server.repository.DeleteByID(customerID); err != nil {
+		if err := server.customerRepository.DeleteByID(customerID); err != nil {
 			target := &repositories.CustomerNotFoundError{}
 			if errors.As(err, &target) {
 				return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -144,4 +144,21 @@ func getValidator(s interface{}) *validate.Validation {
 		"required": "The '{field}' is required",
 	})
 	return v
+}
+
+func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, purchases := server.purchasesRepository.GetAll(customerID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+		return ctx.Status(fiber.StatusOK).JSON(purchases)
+	}
 }

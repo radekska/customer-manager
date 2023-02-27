@@ -15,7 +15,11 @@ func main() {
 		"/home/rskalbania/GolandProjects/customer-manager/test.db",
 		&gorm.Config{Logger: database.GetLogger(logger.Info)},
 	)
-	customerManagerServer := server.NewCustomerManagerServer(app, &repositories.DBCustomerRepository{DB: db})
+	customerManagerServer := server.NewCustomerManagerServer(
+		app,
+		&repositories.DBCustomerRepository{DB: db},
+		&repositories.DBPurchaseRepository{DB: db},
+	)
 
 	customerManagerServer.App.Listen(":3000")
 }

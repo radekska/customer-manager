@@ -59,15 +59,24 @@ func (d *DBCustomerRepository) Update(customer *database.Customer) (error, *data
 }
 
 type DBPurchaseRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
-func (d *DBPurchaseRepository) Create(customer *database.Customer, purchase *database.Purchase) (error, *database.Purchase) {
-	return d.db.Model(customer).Association("Purchases").Append(purchase), purchase
+func (d *DBPurchaseRepository) Create(
+	customer *database.Customer,
+	purchase *database.Purchase,
+) (error, *database.Purchase) {
+	return d.DB.Model(customer).Association("Purchases").Append(purchase), purchase
+}
+
+func (d *DBPurchaseRepository) GetAll(customerID string) (error, []database.Purchase) {
+	var purchases []database.Purchase
+	result := d.DB.Where("customer_id = ?", customerID).Find(&purchases)
+	return result.Error, purchases
 }
 
 func (d *DBPurchaseRepository) DeleteByID(purchaseID string) error {
-	return d.db.Delete(&database.Purchase{ID: purchaseID}).Error
+	return d.DB.Delete(&database.Purchase{ID: purchaseID}).Error
 }
 
 type DBRepairRepository struct {
