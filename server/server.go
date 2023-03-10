@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 import "customer-manager/repositories"
 
@@ -23,6 +24,9 @@ func NewCustomerManagerServer(
 	}
 
 	server.App.Use(jsonContentValidator())
+	server.App.Use(cors.New(cors.Config{
+		AllowOrigins: "http://localhost:3000",
+	}))
 
 	customersPath := "/api/customers"
 

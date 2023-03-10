@@ -21,6 +21,6 @@ func main() {
 		&repositories.DBPurchaseRepository{DB: db},
 	)
 
-	panic(customerManagerServer.App.Listen(":3000"))
+	panic(customerManagerServer.App.Listen(":8080"))
 
 }

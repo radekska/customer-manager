@@ -77,7 +77,6 @@ func (s *StubPurchaseRepository) Create(
 func (s *StubPurchaseRepository) GetAll(customerID string) (error, []database.Purchase) {
 	var customerPurchases []database.Purchase
 	for _, purchase := range s.purchases {
-		fmt.Println("looking for purchases", customerID)
 		if purchase.CustomerID == customerID {
 			customerPurchases = append(customerPurchases, purchase)
 		}
