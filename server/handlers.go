@@ -35,7 +35,7 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
-		err, _ = server.customerRepository.Create(
+		err, customer := server.customerRepository.Create(
 			&database.Customer{
 				FirstName:       newCustomer.FirstName,
 				LastName:        newCustomer.LastName,
@@ -46,8 +46,7 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 			// TODO - fix DB error message 'UNIQUE constraint failed: customers.telephone_number'
 			return err
 		}
-		ctx.Status(fiber.StatusCreated)
-		return nil
+		return ctx.Status(fiber.StatusCreated).JSON(customer)
 	}
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 import "customer-manager/repositories"
 
@@ -10,6 +11,14 @@ type CustomerManagerServer struct {
 	App                 *fiber.App
 	customerRepository  repositories.CustomerRepository
 	purchasesRepository repositories.PurchaseRepository
+}
+
+func mountMiddlewares(server *CustomerManagerServer) {
+	server.App.Use(jsonContentValidator())
+	server.App.Use(cors.New(cors.Config{
+		AllowOrigins: "http://localhost:3000",
+	}))
+	server.App.Use(logger.New())
 }
 
 func NewCustomerManagerServer(
@@ -23,10 +32,7 @@ func NewCustomerManagerServer(
 		purchasesRepository: purchasesRepository,
 	}
 
-	server.App.Use(jsonContentValidator())
-	server.App.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000",
-	}))
+	mountMiddlewares(server)
 
 	customersPath := "/api/customers"
 
