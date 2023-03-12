@@ -14,10 +14,12 @@ import (
 )
 
 type StubCustomerRepository struct {
-	customers []database.Customer
+	customerIDToCreate string
+	customers          []database.Customer
 }
 
 func (s *StubCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
+	customer.ID = s.customerIDToCreate
 	s.customers = append(s.customers, *customer)
 	return nil, customer
 }
@@ -205,14 +207,23 @@ func TestCustomerHandlers(t *testing.T) {
 	})
 
 	t.Run("test create new customer", func(t *testing.T) {
-		server.customerRepository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{customerIDToCreate: "67a85348-2afe-4677-99ce-ed7cdc17e525"}
 		body, _ := json.Marshal(&customer)
 		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
+		assertCustomerDetailsResponse(t, resp, map[string]string{
+			"id":               "67a85348-2afe-4677-99ce-ed7cdc17e525",
+			"first_name":       "John",
+			"last_name":        "Doe",
+			"telephone_number": "123-456-789",
+			"created_at":       "0001-01-01T00:00:00Z",
+			"updated_at":       "0001-01-01T00:00:00Z",
+		})
 		_, currentCustomers := server.customerRepository.GetAll()
+		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
 
