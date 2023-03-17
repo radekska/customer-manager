@@ -29,6 +29,7 @@ type Purchase struct {
 	LensPower  string
 	PD         string
 	CustomerID string
+	// TODO dodaj rodzaj zamówienia
 	// Customer   Customer
 	CreatedAt time.Time
 }
