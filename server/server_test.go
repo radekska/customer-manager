@@ -14,10 +14,12 @@ import (
 )
 
 type StubCustomerRepository struct {
-	customers []database.Customer
+	customerIDToCreate string
+	customers          []database.Customer
 }
 
 func (s *StubCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
+	customer.ID = s.customerIDToCreate
 	s.customers = append(s.customers, *customer)
 	return nil, customer
 }
@@ -58,6 +60,34 @@ func (s *StubCustomerRepository) Update(customerDetails *database.Customer) (err
 	customer.LastName = customerDetails.LastName
 	customer.TelephoneNumber = customerDetails.TelephoneNumber
 	return nil, customer
+}
+
+type StubPurchaseRepository struct {
+	purchases []database.Purchase
+}
+
+func (s *StubPurchaseRepository) Create(
+	customer *database.Customer,
+	purchase *database.Purchase,
+) (error, *database.Purchase) {
+	purchase.CustomerID = customer.ID
+	customer.Purchases = append(customer.Purchases, *purchase)
+	s.purchases = append(s.purchases, *purchase)
+	return nil, purchase
+}
+
+func (s *StubPurchaseRepository) GetAll(customerID string) (error, []database.Purchase) {
+	var customerPurchases []database.Purchase
+	for _, purchase := range s.purchases {
+		if purchase.CustomerID == customerID {
+			customerPurchases = append(customerPurchases, purchase)
+		}
+	}
+	return nil, customerPurchases
+}
+
+func (s *StubPurchaseRepository) DeleteByID(purchaseID string) error {
+	return nil
 }
 
 func makeRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
@@ -120,14 +150,24 @@ func assertNotFoundResponse(t *testing.T, resp *http.Response, expectedDetails m
 	assertResponse(t, resp, expectedDetails)
 }
 
-func TestCustomerManagerServer(t *testing.T) {
+func TestCustomerHandlers(t *testing.T) {
 	customer := database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123-456-789"}
-	server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{})
+	server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
 
 	t.Run("test get all customers", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{customers: []database.Customer{
-			{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
-			{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
+		server.customerRepository = &StubCustomerRepository{customers: []database.Customer{
+			{
+				ID:              "7dd4ace2-d792-4532-bda2-c986a9a04363",
+				FirstName:       "Jane",
+				LastName:        "Doe",
+				TelephoneNumber: "123567848",
+			},
+			{
+				ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+				FirstName:       "Bob",
+				LastName:        "Toe",
+				TelephoneNumber: "367654567",
+			},
 		}}
 		req := makeRequest(t, http.MethodGet, "/api/customers", nil)
 
@@ -157,7 +197,7 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test get no customers as empty repository", func(t *testing.T) {
 		var expectedCustomers []database.Customer
-		server.repository = &StubCustomerRepository{customers: expectedCustomers}
+		server.customerRepository = &StubCustomerRepository{customers: expectedCustomers}
 		req := makeRequest(t, http.MethodGet, "/api/customers", nil)
 
 		resp := getResponse(t, server, req)
@@ -167,19 +207,28 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test create new customer", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{customerIDToCreate: "67a85348-2afe-4677-99ce-ed7cdc17e525"}
 		body, _ := json.Marshal(&customer)
 		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
-		_, currentCustomers := server.repository.GetAll()
+		assertCustomerDetailsResponse(t, resp, map[string]string{
+			"id":               "67a85348-2afe-4677-99ce-ed7cdc17e525",
+			"first_name":       "John",
+			"last_name":        "Doe",
+			"telephone_number": "123-456-789",
+			"created_at":       "0001-01-01T00:00:00Z",
+			"updated_at":       "0001-01-01T00:00:00Z",
+		})
+		_, currentCustomers := server.customerRepository.GetAll()
+		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
 
 	t.Run("test create new customer invalid payload", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		body, _ := json.Marshal(map[string]string{"invalid": "invalid"}) // TODO test unique tel. number
 		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
 
@@ -200,13 +249,13 @@ func TestCustomerManagerServer(t *testing.T) {
 			},
 			actualErrorMessage,
 		)
-		_, currentCustomers := server.repository.GetAll()
+		_, currentCustomers := server.customerRepository.GetAll()
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
 
 	t.Run("test create new customer invalid content-type header", func(t *testing.T) {
 		invalidContentType := "text/html"
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		req := makeRequest(t, http.MethodPost, "/api/customers", nil)
 		req.Header.Set("Content-Type", invalidContentType)
 
@@ -221,10 +270,20 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test get customer by its id", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{
+		server.customerRepository = &StubCustomerRepository{
 			customers: []database.Customer{
-				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
-				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
+				{
+					ID:              "7dd4ace2-d792-4532-bda2-c986a9a04363",
+					FirstName:       "Jane",
+					LastName:        "Doe",
+					TelephoneNumber: "123567848",
+				},
+				{
+					ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+					FirstName:       "Bob",
+					LastName:        "Toe",
+					TelephoneNumber: "367654567",
+				},
 			},
 		}
 		req := makeRequest(t, http.MethodGet, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
@@ -243,9 +302,14 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test get customer by its id but not found", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{
+		server.customerRepository = &StubCustomerRepository{
 			customers: []database.Customer{
-				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
+				{
+					ID:              "7dd4ace2-d792-4532-bda2-c986a9a04363",
+					FirstName:       "Jane",
+					LastName:        "Doe",
+					TelephoneNumber: "123567848",
+				},
 			},
 		}
 		invalidCustomerID := "8a5cae65-222c-4164-a08b-9983af7e366c"
@@ -259,7 +323,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test get customer by invalid id", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		invalidCustomerID := "im-not-uuid"
 		req := makeRequest(t, http.MethodGet, fmt.Sprintf("/api/customers/%s", invalidCustomerID), nil)
 
@@ -271,7 +335,7 @@ func TestCustomerManagerServer(t *testing.T) {
 	})
 
 	t.Run("test edit customer details", func(t *testing.T) {
-		server.repository = &StubCustomerRepository{customers: []database.Customer{
+		server.customerRepository = &StubCustomerRepository{customers: []database.Customer{
 			{
 				ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
 				FirstName:       "Bob",
@@ -309,7 +373,7 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test edit customer details invalid id", func(t *testing.T) {
 		invalidCustomerID := "im-not-uuid"
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		req := makeRequest(
 			t,
 			http.MethodPut,
@@ -326,9 +390,14 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test edit customer details but not found", func(t *testing.T) {
 		invalidCustomerID := "5936ca64-3c2c-4ada-89f9-27fece73a0a8"
-		server.repository = &StubCustomerRepository{
+		server.customerRepository = &StubCustomerRepository{
 			customers: []database.Customer{
-				{ID: "7dd4ace2-d792-4532-bda2-c986a9a04363", FirstName: "Jane", LastName: "Doe", TelephoneNumber: "123567848"},
+				{
+					ID:              "7dd4ace2-d792-4532-bda2-c986a9a04363",
+					FirstName:       "Jane",
+					LastName:        "Doe",
+					TelephoneNumber: "123567848",
+				},
 			},
 		}
 		body, err := json.Marshal(
@@ -355,9 +424,14 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test  edit customer details invalid content-type header", func(t *testing.T) {
 		invalidContentType := "text/html"
-		server.repository = &StubCustomerRepository{
+		server.customerRepository = &StubCustomerRepository{
 			customers: []database.Customer{
-				{ID: "8a5cae65-222c-4164-a08b-9983af7e366c", FirstName: "Bob", LastName: "Toe", TelephoneNumber: "367654567"},
+				{
+					ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+					FirstName:       "Bob",
+					LastName:        "Toe",
+					TelephoneNumber: "367654567",
+				},
 			},
 		}
 		req := makeRequest(t, http.MethodPut, "/api/customers/8a5cae65-222c-4164-a08b-9983af7e366c", nil)
@@ -381,7 +455,7 @@ func TestCustomerManagerServer(t *testing.T) {
 			LastName:        "Brown",
 			TelephoneNumber: "12345",
 		}
-		server.repository = &StubCustomerRepository{
+		server.customerRepository = &StubCustomerRepository{
 			customers: []database.Customer{
 				{
 					ID:              customerOneID,
@@ -407,12 +481,17 @@ func TestCustomerManagerServer(t *testing.T) {
 				customerTwo,
 			},
 		}
-		req := makeRequest(t, http.MethodDelete, fmt.Sprintf("/api/customers/%s", customerOneID), bytes.NewBuffer([]byte{}))
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/%s", customerOneID),
+			bytes.NewBuffer([]byte{}),
+		)
 
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
-		err, customers := server.repository.GetAll()
+		err, customers := server.customerRepository.GetAll()
 		assert.NoError(t, err)
 		assert.Equal(t, []database.Customer{customerTwo}, customers)
 		assert.Equal(t, "", resp.Header.Get("Content-Type"))
@@ -420,7 +499,7 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test delete customer but not found", func(t *testing.T) {
 		invalidID := "37567fea-71ab-4677-9b19-708370034a66"
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		req := makeRequest(
 			t,
 			http.MethodDelete,
@@ -437,7 +516,7 @@ func TestCustomerManagerServer(t *testing.T) {
 
 	t.Run("test delete customer but invalid id", func(t *testing.T) {
 		invalidID := "invalid-id"
-		server.repository = &StubCustomerRepository{}
+		server.customerRepository = &StubCustomerRepository{}
 		req := makeRequest(
 			t,
 			http.MethodDelete,
@@ -450,6 +529,74 @@ func TestCustomerManagerServer(t *testing.T) {
 		assertBadRequestResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", invalidID),
 		})
+	})
+
+}
+
+func TestPurchaseHandlers(t *testing.T) {
+	customer := database.Customer{
+		ID:              "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+		FirstName:       "John",
+		LastName:        "Doe",
+		TelephoneNumber: "123-456-789",
+	}
+	server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
+
+	t.Run("test get all purchases", func(t *testing.T) {
+		err, _ := server.purchasesRepository.Create(
+			&customer,
+			&database.Purchase{
+				ID:         "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+				FrameModel: "Model1",
+				LensType:   "Lens1",
+				LensPower:  "Power1",
+				PD:         "PD1",
+			},
+		)
+		assert.NoError(t, err)
+		err, _ = server.purchasesRepository.Create(
+			&customer,
+			&database.Purchase{
+				ID:         "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+				FrameModel: "Model2",
+				LensType:   "Lens2",
+				LensPower:  "Power2",
+				PD:         "PD2",
+			},
+		)
+		assert.NoError(t, err)
+		req := makeRequest(t, http.MethodGet, "/api/customers/ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f/purchases", nil)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		var actualPurchases []map[string]string
+		err = json.NewDecoder(resp.Body).Decode(&actualPurchases)
+		assert.NoError(t, err)
+		assert.Equal(
+			t,
+			[]map[string]string{
+				{
+					"created_at":  "0001-01-01T00:00:00Z",
+					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model": "Model1",
+					"id":          "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+					"lens_power":  "Power1",
+					"lens_type":   "Lens1",
+					"pd":          "PD1",
+				},
+				{
+					"created_at":  "0001-01-01T00:00:00Z",
+					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model": "Model2",
+					"id":          "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+					"lens_power":  "Power2",
+					"lens_type":   "Lens2",
+					"pd":          "PD2",
+				},
+			},
+			actualPurchases,
+		)
 	})
 
 }

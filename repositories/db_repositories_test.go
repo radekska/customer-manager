@@ -71,6 +71,14 @@ func assertCustomer(t *testing.T, expected *database.Customer, actual *database.
 	assert.Equal(t, expected.Repairs, actual.Repairs)
 }
 
+func assertPurchase(t *testing.T, expected *database.Purchase, actual *database.Purchase) {
+	t.Helper()
+
+	assert.Equal(t, expected.FrameModel, actual.FrameModel)
+	assert.Equal(t, expected.LensPower, actual.LensPower)
+	assert.Equal(t, expected.LensType, actual.LensType)
+}
+
 func TestDBCustomerRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
 	repairRepository := DBRepairRepository{db}
@@ -172,7 +180,9 @@ func TestDBCustomerRepository(t *testing.T) {
 			&database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"},
 		)
 		assert.NoError(t, err)
-		err, _ = customerRepository.Create(&database.Customer{FirstName: "Jane", LastName: "Doe", TelephoneNumber: "987456123"})
+		err, _ = customerRepository.Create(
+			&database.Customer{FirstName: "Jane", LastName: "Doe", TelephoneNumber: "987456123"},
+		)
 		assert.NoError(t, err)
 
 		err, currentCustomer := customerRepository.GetByID(expectedCustomer.ID)
@@ -234,6 +244,24 @@ func TestDBPurchaseRepository(t *testing.T) {
 		LensPower: "LensPower", PD: "CustomPD"}
 
 	clearRecords(t, db)
+
+	t.Run("test get all purchases for a customer", func(t *testing.T) {
+		purchase1 := database.Purchase{FrameModel: "Model1", LensType: "LensType1",
+			LensPower: "LensPower1", PD: "CustomPD1"}
+		purchase2 := database.Purchase{FrameModel: "Model2", LensType: "LensType2",
+			LensPower: "LensPower2", PD: "CustomPD2"}
+		customer.Purchases = []database.Purchase{purchase1, purchase2}
+		err, customer := customerRepository.Create(customer)
+		assert.NoError(t, err)
+
+		err, purchases := purchaseRepository.GetAll(customer.ID)
+
+		assert.NoError(t, err)
+		assertPurchase(t, &purchase1, &purchases[0])
+		assertPurchase(t, &purchase2, &purchases[1])
+
+		clearRecords(t, db)
+	})
 
 	t.Run("test add purchase to a customer", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
