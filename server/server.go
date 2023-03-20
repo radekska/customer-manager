@@ -18,7 +18,7 @@ func mountMiddlewares(server *CustomerManagerServer) {
 	server.App.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:3000",
 	}))
-	server.App.Use(logger.New())
+	server.App.Use(logger.New()) // TODO - do not log requests during tests
 }
 
 func NewCustomerManagerServer(
