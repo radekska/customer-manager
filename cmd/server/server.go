@@ -12,7 +12,7 @@ import (
 func main() {
 	app := fiber.New()
 	db := database.GetDatabase(
-		"/home/rskalbania/GolandProjects/customer-manager/test.db", // TODO - CHANGE ME
+		"test.db", // TODO - CHANGE ME
 		&gorm.Config{Logger: database.GetLogger(logger.Info)},
 	)
 	customerManagerServer := server.NewCustomerManagerServer(
