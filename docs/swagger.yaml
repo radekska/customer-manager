@@ -1,0 +1,212 @@
+definitions:
+  database.Customer:
+    properties:
+      created_at:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      last_name:
+        type: string
+      telephone_number:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - first_name
+    - last_name
+    - telephone_number
+    type: object
+  database.Purchase:
+    properties:
+      created_at:
+        description: |-
+          TODO dodaj rodzaj zamówienia
+          Customer   Customer
+        type: string
+      customer_id:
+        type: string
+      frame_model:
+        type: string
+      id:
+        type: string
+      lens_power:
+        type: string
+      lens_type:
+        type: string
+      pd:
+        type: string
+    type: object
+  server.CreateCustomerRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      telephone_number:
+        type: string
+    required:
+    - first_name
+    - last_name
+    - telephone_number
+    type: object
+  server.EditCustomerDetailsRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      telephone_number:
+        type: string
+    required:
+    - first_name
+    - last_name
+    - telephone_number
+    type: object
+info:
+  contact: {}
+paths:
+  /api/customers:
+    get:
+      description: Returns full list of existing customers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Customer'
+            type: array
+      summary: Get list of customers
+      tags:
+      - list-customers
+    post:
+      consumes:
+      - application/json
+      description: Create customer object
+      parameters:
+      - description: Customer details
+        in: body
+        name: customerDetails
+        required: true
+        schema:
+          $ref: '#/definitions/server.CreateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/database.Customer'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Create customer
+      tags:
+      - create-customer
+  /api/customers/{customerID}:
+    delete:
+      description: Delete customer details and it's relations by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Delete customer
+      tags:
+      - delete-customer
+    get:
+      description: Returns customer details by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Customer'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Get customer
+      tags:
+      - get-customer
+    put:
+      description: Edit customer details by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: New customer details
+        in: body
+        name: customerDetails
+        required: true
+        schema:
+          $ref: '#/definitions/server.EditCustomerDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Customer'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Edit customer
+      tags:
+      - edit-customer
+  /api/customers/{customerID}/purchases:
+    get:
+      description: Returns full list of purchases for a specific customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Purchase'
+            type: array
+      summary: Get list of purchases
+      tags:
+      - get-customer-purchases
+swagger: "2.0"

@@ -10,6 +10,17 @@ import (
 	"github.com/gookit/validate"
 )
 
+func getValidator(s interface{}) *validate.Validation {
+	validate.Config(func(opt *validate.GlobalOption) {
+		opt.StopOnError = false
+	})
+	v := validate.New(s)
+	v.AddMessages(map[string]string{
+		"required": "The '{field}' is required",
+	})
+	return v
+}
+
 // getCustomersHandler godoc
 //
 //	@Summary		Get list of customers
@@ -186,17 +197,15 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
-func getValidator(s interface{}) *validate.Validation {
-	validate.Config(func(opt *validate.GlobalOption) {
-		opt.StopOnError = false
-	})
-	v := validate.New(s)
-	v.AddMessages(map[string]string{
-		"required": "The '{field}' is required",
-	})
-	return v
-}
-
+// getPurchasesHandler godoc
+//
+//	@Summary		Get list of purchases
+//	@Description	Returns full list of purchases for a specific customer by ID
+//	@Tags			get-customer-purchases
+//	@Produce		json
+//	@Success		200	{array} database.Purchase
+// 	@Param			customerID	path	string	true "Customer ID"
+//	@Router			/api/customers/{customerID}/purchases [get]
 func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		customerID := ctx.Params("customerID")

@@ -4,5 +4,5 @@ migrate:
 start:
 	go run cmd/server/server.go
 
-docs:
+api-docs:
 	swag init
