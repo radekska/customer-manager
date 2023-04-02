@@ -37,10 +37,11 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Produce		json
 //	@Success		201	{object} database.Customer
 //	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+// 	@Param			customerDetails	body	server.CreateCustomerRequest	true "Customer details"
 //	@Router			/api/customers [post]
 func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		newCustomer := new(createCustomerRequest)
+		newCustomer := new(CreateCustomerRequest)
 		err := ctx.BodyParser(newCustomer)
 		if err == fiber.ErrUnprocessableEntity {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -68,6 +69,17 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
+// getCustomerByIDHandler godoc
+//
+//	@Summary		Get customer
+//	@Description	Returns customer details by ID
+//	@Tags			get-customer
+//	@Produce		json
+//	@Success		200	{object} database.Customer
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+// 	@Param			customerID	path	string	true "Customer ID"
+//	@Router			/api/customers/{customerID} [get]
 func getCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		customerID := ctx.Params("customerID")
@@ -87,6 +99,18 @@ func getCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
+// editCustomerByIDHandler godoc
+//
+//	@Summary		Edit customer
+//	@Description	Edit customer details by ID
+//	@Tags			edit-customer
+//	@Produce		json
+//	@Success		200	{object} database.Customer
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+// 	@Param			customerID	path	string	true "Customer ID"
+// 	@Param			customerDetails	body	server.EditCustomerDetailsRequest	true "New customer details"
+//	@Router			/api/customers/{customerID} [put]
 func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		customerID := ctx.Params("customerID")
@@ -96,7 +120,7 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
 			})
 		}
-		newCustomerDetails := new(editCustomerDetailsRequest)
+		newCustomerDetails := new(EditCustomerDetailsRequest)
 		err = ctx.BodyParser(newCustomerDetails)
 		if err == fiber.ErrUnprocessableEntity {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -127,6 +151,16 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
+// deleteCustomerByIDHandler godoc
+//
+//	@Summary		Delete customer
+//	@Description	Delete customer details and it's relations by ID
+//	@Tags			delete-customer
+//	@Success		204
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+// 	@Param			customerID	path	string	true "Customer ID"
+//	@Router			/api/customers/{customerID} [delete]
 func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		customerID := ctx.Params("customerID")
