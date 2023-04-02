@@ -10,6 +10,14 @@ import (
 	"github.com/gookit/validate"
 )
 
+// getCustomersHandler godoc
+//
+//	@Summary		Get list of customers
+//	@Description	Returns full list of existing customers
+//	@Tags			list-customers
+//	@Produce		json
+//	@Success		200	{array} database.Customer
+//	@Router			/api/customers [get]
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		err, customers := server.customerRepository.GetAll()
@@ -20,6 +28,16 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
+// createCustomerHandler godoc
+//
+//	@Summary		Create customer
+//	@Description	Create customer object
+//	@Tags			create-customer
+//  @Accept			json
+//	@Produce		json
+//	@Success		201	{object} database.Customer
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Router			/api/customers [post]
 func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		newCustomer := new(createCustomerRequest)
