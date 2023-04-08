@@ -71,7 +71,7 @@ paths:
     get:
       description: Returns full list of existing customers
       parameters:
-      - description: first or last name search by filter
+      - description: first or last name search
         in: query
         name: filter
         type: string

@@ -29,7 +29,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "first or last name search by filter",
+                        "description": "first or last name search",
                         "name": "filter",
                         "in": "query"
                     }
