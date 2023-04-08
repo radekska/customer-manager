@@ -26,6 +26,14 @@ const docTemplate = `{
                     "list-customers"
                 ],
                 "summary": "Get list of customers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "first or last name search by filter",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

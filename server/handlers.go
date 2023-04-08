@@ -28,6 +28,7 @@ func getValidator(s interface{}) *validate.Validation {
 //	@Tags			list-customers
 //	@Produce		json
 //	@Success		200	{array} database.Customer
+//	@Param        	filter    query     string  false  "first or last name search"
 //	@Router			/api/customers [get]
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {

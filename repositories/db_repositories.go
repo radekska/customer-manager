@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strings"
 )
 
 type DBCustomerRepository struct {
@@ -38,10 +39,12 @@ func (d *DBCustomerRepository) DeleteByID(customerID string) error {
 func (d *DBCustomerRepository) ListBy(customerName string) (error, []database.Customer) {
 	var customers []database.Customer
 	var result *gorm.DB
+	customerName = strings.ToLower(customerName)
 	if customerName == "" {
 		result = d.DB.Find(&customers)
 	} else {
-		result = d.DB.Where("first_name LIKE ? OR last_name LIKE ?", "%%s%", customerName).Find(&customers)
+		likeQuery := fmt.Sprintf("%%%s%%", customerName)
+		result = d.DB.Where("LOWER(first_name) LIKE ? OR LOWER(last_name) LIKE ?", likeQuery, likeQuery).Find(&customers)
 	}
 
 	return result.Error, customers
