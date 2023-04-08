@@ -43,15 +43,15 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 
 // createCustomerHandler godoc
 //
-//		@Summary		Create customer
-//		@Description	Create customer object
-//		@Tags			create-customer
-//	 @Accept			json
-//		@Produce		json
-//		@Success		201	{object} database.Customer
-//		@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//		@Param			customerDetails	body	server.CreateCustomerRequest	true "Customer details"
-//		@Router			/api/customers [post]
+//	@Summary		Create customer
+//	@Description	Create customer object
+//	@Tags			create-customer
+//	@Accept			json
+//	@Produce		json
+//	@Success		201	{object} database.Customer
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerDetails	body	server.CreateCustomerRequest	true "Customer details"
+//	@Router			/api/customers [post]
 func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		newCustomer := new(CreateCustomerRequest)
