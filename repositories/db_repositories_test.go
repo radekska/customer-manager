@@ -158,7 +158,7 @@ func TestDBCustomerRepository(t *testing.T) {
 			customers = append(customers, *customer)
 		}
 
-		err, dbCustomers := customerRepository.GetAll()
+		err, dbCustomers := customerRepository.ListBy("")
 
 		assert.NoError(t, err)
 		for i := 0; i < len(customers); i++ {
@@ -169,10 +169,14 @@ func TestDBCustomerRepository(t *testing.T) {
 	})
 
 	t.Run("test get all customers when no records ", func(t *testing.T) {
-		err, dbCustomers := customerRepository.GetAll()
+		err, dbCustomers := customerRepository.ListBy("")
 
 		assert.NoError(t, err)
 		assert.Len(t, dbCustomers, 0)
+	})
+
+	t.Run("test get filtered customers", func(t *testing.T) {
+
 	})
 
 	t.Run("test get customer by its id", func(t *testing.T) {

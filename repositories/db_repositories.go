@@ -35,9 +35,15 @@ func (d *DBCustomerRepository) DeleteByID(customerID string) error {
 	return nil
 }
 
-func (d *DBCustomerRepository) GetAll() (error, []database.Customer) {
+func (d *DBCustomerRepository) ListBy(customerName string) (error, []database.Customer) {
 	var customers []database.Customer
-	result := d.DB.Find(&customers)
+	var result *gorm.DB
+	if customerName == "" {
+		result = d.DB.Find(&customers)
+	} else {
+		result = d.DB.Where("first_name LIKE ? OR last_name LIKE ?", "%%s%", customerName).Find(&customers)
+	}
+
 	return result.Error, customers
 }
 
