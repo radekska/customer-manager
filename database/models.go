@@ -23,15 +23,16 @@ func (u *Customer) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type Purchase struct {
-	ID         string `gorm:"primaryKey" json:"id"`
-	FrameModel string `                  json:"frame_model"`
-	LensType   string `                  json:"lens_type"`
-	LensPower  string `                  json:"lens_power"`
-	PD         string `                  json:"pd"`
-	CustomerID string `                  json:"customer_id"`
-	// TODO dodaj rodzaj zamówienia
-	// Customer   Customer
-	CreatedAt time.Time `                  json:"created_at"`
+	ID           string    `gorm:"primaryKey" json:"id"`
+	FrameModel   string    `                  json:"frame_model"`
+	LensType     string    `                  json:"lens_type"`
+	LensPower    string    `                  json:"lens_power"`
+	PD           string    `                  json:"pd"`
+	CustomerID   string    `                  json:"customer_id"`
+	PurchaseType string    `                  json:"purchase_type"`
+	PurchasedAt  time.Time `                  json:"purchased_at"`
+	CreatedAt    time.Time `                  json:"created_at"`
+	UpdatedAt    time.Time `                  json:"updated_at"`
 }
 
 func (p *Purchase) BeforeCreate(tx *gorm.DB) (err error) {

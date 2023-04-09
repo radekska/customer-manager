@@ -242,7 +242,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 	purchaseRepository := DBPurchaseRepository{db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 	purchase := &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD"}
+		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType"}
 
 	clearRecords(t, db)
 
@@ -276,6 +276,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 		assert.Equal(t, "LensType1", dbPurchase.LensType)
 		assert.Equal(t, "LensPower", dbPurchase.LensPower)
 		assert.Equal(t, "CustomPD", dbPurchase.PD)
+		assert.Equal(t, "CustomPurchaseType", dbPurchase.PurchaseType)
 		assert.Equal(t, dbCustomer.ID, dbPurchase.CustomerID)
 
 		clearRecords(t, db)

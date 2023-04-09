@@ -226,3 +226,61 @@ func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
 		return ctx.Status(fiber.StatusOK).JSON(purchases)
 	}
 }
+
+// createPurchaseHandler godoc
+//
+//	@Summary		Create a purchase for a customer
+//	@Description	Creates a new purchase for a customer by ID
+//	@Tags			create-customer-purchase
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object} database.Purchase
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Param			purchaseDetails	body	server.CreatePurchaseRequest	true "Purchase details"
+//	@Router			/api/customers/{customerID}/purchases [post]
+func createPurchaseHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		newPurchase := new(CreatePurchaseRequest)
+		err := ctx.BodyParser(newPurchase)
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
+		}
+
+		validator := getValidator(newPurchase)
+		if !validator.Validate() {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		}
+
+		customerID := ctx.Params("customerID")
+		_, err = uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, customer := server.customerRepository.GetByID(customerID)
+		if errors.Is(err, &repositories.CustomerNotFoundError{}) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+
+		err, purchase := server.purchasesRepository.Create(customer, &database.Purchase{
+			FrameModel:   newPurchase.FrameModel,
+			LensType:     newPurchase.LensType,
+			LensPower:    newPurchase.LensPower,
+			PD:           newPurchase.PD,
+			PurchaseType: newPurchase.PurchaseType,
+			PurchasedAt:  newPurchase.PurchasedAt,
+		})
+		if err != nil {
+			// TODO: handle error
+			return err
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(purchase)
+	}
+}
