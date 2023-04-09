@@ -51,6 +51,7 @@ func NewCustomerManagerServer(
 
 	purchasesPath := customersPath + "/:customerID" + "/purchases"
 	server.App.Get(purchasesPath, getPurchasesHandler(server))
+	server.App.Post(purchasesPath, createPurchaseHandler(server))
 
 	return server
 }

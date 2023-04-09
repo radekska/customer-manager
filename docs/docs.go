@@ -243,6 +243,57 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Creates a new purchase for a customer by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create-customer-purchase"
+                ],
+                "summary": "Create a purchase for a customer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Purchase details",
+                        "name": "purchaseDetails",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.CreatePurchaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Purchase"
+                        }
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         }
     },
@@ -279,7 +330,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "TODO dodaj rodzaj zamówienia\nCustomer   Customer",
                     "type": "string"
                 },
                 "customer_id": {
@@ -299,6 +349,15 @@ const docTemplate = `{
                 },
                 "pd": {
                     "type": "string"
+                },
+                "purchase_type": {
+                    "type": "string"
+                },
+                "purchased_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -317,6 +376,37 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "telephone_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.CreatePurchaseRequest": {
+            "type": "object",
+            "required": [
+                "frame_model",
+                "lens_power",
+                "lens_type",
+                "pd",
+                "purchase_type",
+                "purchased_at"
+            ],
+            "properties": {
+                "frame_model": {
+                    "type": "string"
+                },
+                "lens_power": {
+                    "type": "string"
+                },
+                "lens_type": {
+                    "type": "string"
+                },
+                "pd": {
+                    "type": "string"
+                },
+                "purchase_type": {
+                    "type": "string"
+                },
+                "purchased_at": {
                     "type": "string"
                 }
             }

@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 )
 
 type StubCustomerRepository struct {
@@ -63,7 +64,8 @@ func (s *StubCustomerRepository) Update(customerDetails *database.Customer) (err
 }
 
 type StubPurchaseRepository struct {
-	purchases []database.Purchase
+	purchaseIDToCreate string
+	purchases          []database.Purchase
 }
 
 func (s *StubPurchaseRepository) Create(
@@ -71,6 +73,9 @@ func (s *StubPurchaseRepository) Create(
 	purchase *database.Purchase,
 ) (error, *database.Purchase) {
 	purchase.CustomerID = customer.ID
+	if purchase.ID == "" {
+		purchase.ID = s.purchaseIDToCreate
+	}
 	customer.Purchases = append(customer.Purchases, *purchase)
 	s.purchases = append(s.purchases, *purchase)
 	return nil, purchase
@@ -540,28 +545,32 @@ func TestPurchaseHandlers(t *testing.T) {
 		LastName:        "Doe",
 		TelephoneNumber: "123-456-789",
 	}
-	server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
 
 	t.Run("test get all purchases", func(t *testing.T) {
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
 		err, _ := server.purchasesRepository.Create(
 			&customer,
 			&database.Purchase{
-				ID:         "ca1224cb-c993-4d45-8053-73c56aaf2c77",
-				FrameModel: "Model1",
-				LensType:   "Lens1",
-				LensPower:  "Power1",
-				PD:         "PD1",
+				ID:           "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+				FrameModel:   "Model1",
+				LensType:     "Lens1",
+				LensPower:    "Power1",
+				PD:           "PD1",
+				PurchaseType: "PurchaseType1",
+				PurchasedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		)
 		assert.NoError(t, err)
 		err, _ = server.purchasesRepository.Create(
 			&customer,
 			&database.Purchase{
-				ID:         "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
-				FrameModel: "Model2",
-				LensType:   "Lens2",
-				LensPower:  "Power2",
-				PD:         "PD2",
+				ID:           "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+				FrameModel:   "Model2",
+				LensType:     "Lens2",
+				LensPower:    "Power2",
+				PD:           "PD2",
+				PurchaseType: "PurchaseType2",
+				PurchasedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		)
 		assert.NoError(t, err)
@@ -577,25 +586,73 @@ func TestPurchaseHandlers(t *testing.T) {
 			t,
 			[]map[string]string{
 				{
-					"created_at":  "0001-01-01T00:00:00Z",
-					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
-					"frame_model": "Model1",
-					"id":          "ca1224cb-c993-4d45-8053-73c56aaf2c77",
-					"lens_power":  "Power1",
-					"lens_type":   "Lens1",
-					"pd":          "PD1",
+					"created_at":    "0001-01-01T00:00:00Z",
+					"customer_id":   "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model":   "Model1",
+					"id":            "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+					"lens_power":    "Power1",
+					"lens_type":     "Lens1",
+					"pd":            "PD1",
+					"purchase_type": "PurchaseType1",
+					"purchased_at":  "2022-01-01T00:00:00Z",
+					"updated_at":    "0001-01-01T00:00:00Z",
 				},
 				{
-					"created_at":  "0001-01-01T00:00:00Z",
-					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
-					"frame_model": "Model2",
-					"id":          "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
-					"lens_power":  "Power2",
-					"lens_type":   "Lens2",
-					"pd":          "PD2",
+					"created_at":    "0001-01-01T00:00:00Z",
+					"customer_id":   "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model":   "Model2",
+					"id":            "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+					"lens_power":    "Power2",
+					"lens_type":     "Lens2",
+					"pd":            "PD2",
+					"purchase_type": "PurchaseType2",
+					"purchased_at":  "2021-01-01T00:00:00Z",
+					"updated_at":    "0001-01-01T00:00:00Z",
 				},
 			},
 			actualPurchases,
+		)
+	})
+
+	t.Run("test create purchase for a customer", func(t *testing.T) {
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{
+			customers: []database.Customer{customer},
+		}, &StubPurchaseRepository{purchaseIDToCreate: "80dfb090-deea-4672-873d-a9cf8d4103e0"})
+		req := makeRequest(
+			t,
+			http.MethodPost,
+			fmt.Sprintf("/api/customers/%s/purchases", customer.ID),
+			bytes.NewBuffer([]byte(`{
+				"frame_model": "Model1",
+				"lens_type": "Lens1",
+				"lens_power": "Power1",
+				"pd": "PD1",
+				"purchase_type": "PurchaseType1",
+				"purchased_at": "2021-01-01T00:00:00Z"
+			}`)),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
+		var actualPurchase map[string]string
+		err := json.NewDecoder(resp.Body).Decode(&actualPurchase)
+		assert.NoError(t, err)
+		assert.Equal(
+			t,
+			map[string]string{
+				"created_at":    "0001-01-01T00:00:00Z",
+				"customer_id":   "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+				"frame_model":   "Model1",
+				"id":            "80dfb090-deea-4672-873d-a9cf8d4103e0",
+				"lens_power":    "Power1",
+				"lens_type":     "Lens1",
+				"pd":            "PD1",
+				"purchase_type": "PurchaseType1",
+				"purchased_at":  "2021-01-01T00:00:00Z",
+				"updated_at":    "0001-01-01T00:00:00Z",
+			},
+			actualPurchase,
 		)
 	})
 

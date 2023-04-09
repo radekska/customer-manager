@@ -21,9 +21,6 @@ definitions:
   database.Purchase:
     properties:
       created_at:
-        description: |-
-          TODO dodaj rodzaj zamówienia
-          Customer   Customer
         type: string
       customer_id:
         type: string
@@ -36,6 +33,12 @@ definitions:
       lens_type:
         type: string
       pd:
+        type: string
+      purchase_type:
+        type: string
+      purchased_at:
+        type: string
+      updated_at:
         type: string
     type: object
   server.CreateCustomerRequest:
@@ -50,6 +53,28 @@ definitions:
     - first_name
     - last_name
     - telephone_number
+    type: object
+  server.CreatePurchaseRequest:
+    properties:
+      frame_model:
+        type: string
+      lens_power:
+        type: string
+      lens_type:
+        type: string
+      pd:
+        type: string
+      purchase_type:
+        type: string
+      purchased_at:
+        type: string
+    required:
+    - frame_model
+    - lens_power
+    - lens_type
+    - pd
+    - purchase_type
+    - purchased_at
     type: object
   server.EditCustomerDetailsRequest:
     properties:
@@ -218,4 +243,38 @@ paths:
       summary: Get list of purchases
       tags:
       - get-customer-purchases
+    post:
+      consumes:
+      - application/json
+      description: Creates a new purchase for a customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Purchase details
+        in: body
+        name: purchaseDetails
+        required: true
+        schema:
+          $ref: '#/definitions/server.CreatePurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Purchase'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Create a purchase for a customer
+      tags:
+      - create-customer-purchase
 swagger: "2.0"
