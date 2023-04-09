@@ -36,15 +36,17 @@ func (d *DBCustomerRepository) DeleteByID(customerID string) error {
 	return nil
 }
 
-func (d *DBCustomerRepository) ListBy(customerName string) (error, []database.Customer) {
+func (d *DBCustomerRepository) ListBy(customerFirstName string, customerLastName string) (error, []database.Customer) {
 	var customers []database.Customer
 	var result *gorm.DB
-	customerName = strings.ToLower(customerName)
-	if customerName == "" {
+	firstName := strings.ToLower(customerFirstName)
+	lastName := strings.ToLower(customerLastName)
+	if firstName == "" && lastName == "" {
 		result = d.DB.Find(&customers)
 	} else {
-		likeQuery := fmt.Sprintf("%%%s%%", customerName)
-		result = d.DB.Where("LOWER(first_name) LIKE ? OR LOWER(last_name) LIKE ?", likeQuery, likeQuery).Find(&customers)
+		firstNameQuery := fmt.Sprintf("%%%s%%", firstName)
+		lastNameQuery := fmt.Sprintf("%%%s%%", lastName)
+		result = d.DB.Where("LOWER(first_name) LIKE ? OR LOWER(last_name) LIKE ?", firstNameQuery, lastNameQuery).Find(&customers)
 	}
 
 	return result.Error, customers

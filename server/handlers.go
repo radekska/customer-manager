@@ -28,12 +28,14 @@ func getValidator(s interface{}) *validate.Validation {
 //	@Tags			list-customers
 //	@Produce		json
 //	@Success		200	{array} database.Customer
-//	@Param        	filter    query     string  false  "first or last name search"
+//	@Param        	firstName    query     string  false  "first name search"
+//	@Param        	lastName    query     string  false  "last name search"
 //	@Router			/api/customers [get]
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		customerName := ctx.Query("filter")
-		err, customers := server.customerRepository.ListBy(customerName)
+		firstName := ctx.Query("firstName")
+		lastName := ctx.Query("lastName")
+		err, customers := server.customerRepository.ListBy(firstName, lastName)
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}

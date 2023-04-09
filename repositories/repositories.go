@@ -5,7 +5,7 @@ import "customer-manager/database"
 type CustomerRepository interface {
 	Create(customer *database.Customer) (error, *database.Customer)
 	DeleteByID(customerID string) error
-	ListBy(customerName string) (error, []database.Customer)
+	ListBy(customerFirstName string, customerLastName string) (error, []database.Customer)
 	GetByID(customerID string) (error, *database.Customer)
 	Update(customer *database.Customer) (error, *database.Customer)
 }

@@ -29,8 +29,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "first or last name search",
-                        "name": "filter",
+                        "description": "first name search",
+                        "name": "firstName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "last name search",
+                        "name": "lastName",
                         "in": "query"
                     }
                 ],

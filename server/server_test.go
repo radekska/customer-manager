@@ -38,7 +38,7 @@ func (s *StubCustomerRepository) DeleteByID(customerID string) error {
 	return nil
 }
 
-func (s *StubCustomerRepository) ListBy(customerName string) (error, []database.Customer) {
+func (s *StubCustomerRepository) ListBy(firstName string, lastName string) (error, []database.Customer) {
 	return nil, s.customers
 }
 
@@ -222,7 +222,7 @@ func TestCustomerHandlers(t *testing.T) {
 			"created_at":       "0001-01-01T00:00:00Z",
 			"updated_at":       "0001-01-01T00:00:00Z",
 		})
-		_, currentCustomers := server.customerRepository.ListBy("")
+		_, currentCustomers := server.customerRepository.ListBy("", "")
 		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
@@ -249,7 +249,7 @@ func TestCustomerHandlers(t *testing.T) {
 			},
 			actualErrorMessage,
 		)
-		_, currentCustomers := server.customerRepository.ListBy("")
+		_, currentCustomers := server.customerRepository.ListBy("", "")
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
 
@@ -491,7 +491,7 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
-		err, customers := server.customerRepository.ListBy("")
+		err, customers := server.customerRepository.ListBy("", "")
 		assert.NoError(t, err)
 		assert.Equal(t, []database.Customer{customerTwo}, customers)
 		assert.Equal(t, "", resp.Header.Get("Content-Type"))
