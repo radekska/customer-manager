@@ -30,7 +30,7 @@ type Purchase struct {
 	PD           string    `                  json:"pd"`
 	CustomerID   string    `                  json:"customer_id"`
 	PurchaseType string    `                  json:"purchase_type"`
-	PurchasedAt  time.Time `                  json:"purchased_at"`
+	PurchasedAt  time.Time `gorm:"type:date"  json:"purchased_at"`
 	CreatedAt    time.Time `                  json:"created_at"`
 	UpdatedAt    time.Time `                  json:"updated_at"`
 }

@@ -628,7 +628,7 @@ func TestPurchaseHandlers(t *testing.T) {
 				"lens_power": "Power1",
 				"pd": "PD1",
 				"purchase_type": "PurchaseType1",
-				"purchased_at": "2021-01-01T00:00:00Z"
+				"purchased_at": "2021-01-01"
 			}`)),
 		)
 

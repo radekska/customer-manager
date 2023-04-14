@@ -7,19 +7,8 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/gookit/validate"
+	"time"
 )
-
-func getValidator(s interface{}) *validate.Validation {
-	validate.Config(func(opt *validate.GlobalOption) {
-		opt.StopOnError = false
-	})
-	v := validate.New(s)
-	v.AddMessages(map[string]string{
-		"required": "The '{field}' is required",
-	})
-	return v
-}
 
 // getCustomersHandler godoc
 //
@@ -275,7 +264,7 @@ func createPurchaseHandler(server *CustomerManagerServer) fiber.Handler {
 			LensPower:    newPurchase.LensPower,
 			PD:           newPurchase.PD,
 			PurchaseType: newPurchase.PurchaseType,
-			PurchasedAt:  newPurchase.PurchasedAt,
+			PurchasedAt:  time.Time(newPurchase.PurchasedAt),
 		})
 		if err != nil {
 			// TODO: handle error

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"testing"
+	"time"
 )
 
 func clearRecords(t *testing.T, db *gorm.DB) {
@@ -242,7 +243,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 	purchaseRepository := DBPurchaseRepository{db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 	purchase := &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType"}
+		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 
 	clearRecords(t, db)
 
@@ -278,6 +279,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 		assert.Equal(t, "CustomPD", dbPurchase.PD)
 		assert.Equal(t, "CustomPurchaseType", dbPurchase.PurchaseType)
 		assert.Equal(t, dbCustomer.ID, dbPurchase.CustomerID)
+		assert.Equal(t, time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC), dbPurchase.PurchasedAt)
 
 		clearRecords(t, db)
 	})
