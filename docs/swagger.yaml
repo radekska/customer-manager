@@ -67,6 +67,7 @@ definitions:
       purchase_type:
         type: string
       purchased_at:
+        description: TODO - when invalid date specified it returns field is required
         type: string
     required:
     - frame_model
@@ -277,4 +278,32 @@ paths:
       summary: Create a purchase for a customer
       tags:
       - create-customer-purchase
+  /api/customers/{customerID}/purchases/{purchaseID}:
+    delete:
+      description: Deletes a purchase by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Purchase ID
+        in: path
+        name: purchaseID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Delete a purchase
+      tags:
+      - delete-customer-purchase
 swagger: "2.0"
