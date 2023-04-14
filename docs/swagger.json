@@ -283,6 +283,48 @@
                     }
                 }
             }
+        },
+        "/api/customers/{customerID}/purchases/{purchaseID}": {
+            "delete": {
+                "description": "Deletes a purchase by ID",
+                "tags": [
+                    "delete-customer-purchase"
+                ],
+                "summary": "Delete a purchase",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Purchase ID",
+                        "name": "purchaseID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -395,6 +437,7 @@
                     "type": "string"
                 },
                 "purchased_at": {
+                    "description": "TODO - when invalid date specified it returns field is required",
                     "type": "string"
                 }
             }

@@ -92,7 +92,13 @@ func (s *StubPurchaseRepository) GetAll(customerID string) (error, []database.Pu
 }
 
 func (s *StubPurchaseRepository) DeleteByID(purchaseID string) error {
-	return nil
+	for idx, purchase := range s.purchases {
+		if purchase.ID == purchaseID {
+			s.purchases = append(s.purchases[:idx], s.purchases[idx+1:]...)
+			return nil
+		}
+	}
+	return &repositories.PurchaseNotFoundError{PurchaseID: purchaseID}
 }
 
 func makeRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
@@ -656,4 +662,78 @@ func TestPurchaseHandlers(t *testing.T) {
 		)
 	})
 
+	t.Run("test delete purchase for a customer", func(t *testing.T) {
+		customerID := "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f"
+		purchases := []database.Purchase{{
+			ID:           "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+			FrameModel:   "Model1",
+			LensType:     "Lens1",
+			LensPower:    "Power1",
+			PD:           "PD1",
+			PurchaseType: "PurchaseType1",
+			PurchasedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+			CustomerID:   customerID,
+		}, {
+			ID:           "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+			FrameModel:   "Model2",
+			LensType:     "Lens2",
+			LensPower:    "Power2",
+			PD:           "PD2",
+			PurchaseType: "PurchaseType2",
+			PurchasedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			CustomerID:   customerID,
+		}}
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{
+			customers: []database.Customer{customer},
+		}, &StubPurchaseRepository{purchases: purchases})
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf(
+				"/api/customers/%s/purchases/%s", customerID, "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+			),
+			nil,
+		)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
+		err, currentPurchases := server.purchasesRepository.GetAll(customerID)
+		assert.NoError(t, err)
+		assert.Equal(t, []database.Purchase{purchases[1]}, currentPurchases)
+	})
+
+	t.Run("test delete purchase but not found", func(t *testing.T) {
+		invalidID := "37567fea-71ab-4677-9b19-708370034a66"
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/33c2cb49-6156-4efe-b282-b0ba553d883f/purchases/%s", invalidID),
+			bytes.NewBuffer([]byte{}),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assertNotFoundResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf("purchase with given id '%s' does not exists", invalidID),
+		})
+	})
+
+	t.Run("test delete purchase for a customer with invalid purchase id", func(t *testing.T) {
+		invalidID := "invalid-id"
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/33c2cb49-6156-4efe-b282-b0ba553d883f/purchases/%s", invalidID),
+			bytes.NewBuffer([]byte{}),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assertBadRequestResponse(t, resp, map[string]string{
+			"detail": fmt.Sprintf("given purchase id '%s' is not a valid UUID", invalidID),
+		})
+	})
 }

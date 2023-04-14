@@ -287,17 +287,21 @@ func TestDBPurchaseRepository(t *testing.T) {
 	t.Run("test remove purchase by ID", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
 		assert.NoError(t, err)
-
 		err, dbPurchase := purchaseRepository.Create(dbCustomer, purchase)
 		assert.NoError(t, err)
 
 		err = purchaseRepository.DeleteByID(dbPurchase.ID)
-		assert.NoError(t, err)
 
+		assert.NoError(t, err)
 		assert.Equal(t, 1, len(getAllCustomers(t, db)))
 		assert.Nil(t, getPurchaseByID(dbPurchase.ID, t, db))
-
 		clearRecords(t, db)
+	})
+
+	t.Run("test remove purchase by ID but not found", func(t *testing.T) {
+		err := purchaseRepository.DeleteByID("4a923682-1234-47c1-b37a-666544d71419")
+
+		assert.Equal(t, err, &PurchaseNotFoundError{PurchaseID: "4a923682-1234-47c1-b37a-666544d71419"})
 	})
 }
 

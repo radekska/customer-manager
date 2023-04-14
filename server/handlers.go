@@ -273,3 +273,48 @@ func createPurchaseHandler(server *CustomerManagerServer) fiber.Handler {
 		return ctx.Status(fiber.StatusCreated).JSON(purchase)
 	}
 }
+
+// deletePurchaseByIDHandler godoc
+//
+//	@Summary		Delete a purchase
+//	@Description	Deletes a purchase by ID
+//	@Tags			delete-customer-purchase
+//	@Success		204
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Param			purchaseID	path	string	true "Purchase ID"
+//	@Router			/api/customers/{customerID}/purchases/{purchaseID} [delete]
+func deletePurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		purchaseID := ctx.Params("purchaseID")
+		_, err = uuid.Parse(purchaseID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given purchase id '%s' is not a valid UUID", purchaseID),
+			})
+		}
+
+		if err := server.purchasesRepository.DeleteByID(purchaseID); err != nil {
+			target := &repositories.PurchaseNotFoundError{}
+			if errors.As(err, &target) {
+				return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"detail": fmt.Sprintf("purchase with given id '%s' does not exists", purchaseID),
+				})
+			}
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"detail": err,
+			})
+		}
+
+		ctx.Status(fiber.StatusNoContent)
+		return nil
+	}
+}

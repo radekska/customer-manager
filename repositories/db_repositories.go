@@ -21,6 +21,14 @@ func (c *CustomerNotFoundError) Error() string {
 	return fmt.Sprintf("customer with ID '%s' does not exist", c.CustomerID)
 }
 
+type PurchaseNotFoundError struct {
+	PurchaseID string
+}
+
+func (p *PurchaseNotFoundError) Error() string {
+	return fmt.Sprintf("purchase with ID '%s' does not exist", p.PurchaseID)
+}
+
 func (d *DBCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
 	return d.DB.Create(&customer).Error, customer
 }
@@ -87,7 +95,14 @@ func (d *DBPurchaseRepository) GetAll(customerID string) (error, []database.Purc
 }
 
 func (d *DBPurchaseRepository) DeleteByID(purchaseID string) error {
-	return d.DB.Delete(&database.Purchase{ID: purchaseID}).Error
+	result := d.DB.Delete(&database.Purchase{ID: purchaseID})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return &PurchaseNotFoundError{PurchaseID: purchaseID}
+	}
+	return nil
 }
 
 type DBRepairRepository struct {
