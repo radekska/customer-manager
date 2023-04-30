@@ -1,7 +1,7 @@
 package database
 
 import (
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
@@ -10,7 +10,7 @@ import (
 )
 
 func GetDatabase(dsn string, config *gorm.Config) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(dsn), config)
+	db, err := gorm.Open(mysql.Open(dsn), config)
 	if err != nil {
 		panic("failed to connect database")
 	}

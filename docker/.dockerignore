@@ -1,0 +1,5 @@
+docker/
+.github/
+.gitignore
+.env
+.golangci.yml

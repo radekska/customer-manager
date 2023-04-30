@@ -1,0 +1,33 @@
+version: "3"
+services:
+  customer-manager:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    env_file:
+      - ../.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+      - customer-manager-migrations
+
+  customer-manager-migrations:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+    env_file:
+      - ../.env
+    command: customer-manager-migrations
+    depends_on:
+      - database
+
+  database:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: customer-manager
+      MYSQL_PASSWORD: secret123
+      MYSQL_USER: admin
+      MYSQL_ROOT_PASSWORD: secret123
