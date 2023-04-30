@@ -94,6 +94,16 @@ func (d *DBPurchaseRepository) GetAll(customerID string) (error, []database.Purc
 	return result.Error, purchases
 }
 
+func (d *DBPurchaseRepository) Update(purchase *database.Purchase) (error, *database.Purchase) {
+	result := d.DB.Model(purchase).
+		Select("FrameModel", "LensType", "LensPower", "PD", "PurchaseType", "PurchasedAt").
+		Updates(purchase)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return &PurchaseNotFoundError{PurchaseID: purchase.ID}, nil
+	}
+	return result.Error, purchase
+}
+
 func (d *DBPurchaseRepository) DeleteByID(purchaseID string) error {
 	result := d.DB.Delete(&database.Purchase{ID: purchaseID})
 	if result.Error != nil {

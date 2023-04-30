@@ -284,6 +284,31 @@ func TestDBPurchaseRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
+	t.Run("test update purchase details", func(t *testing.T) {
+		err, dbCustomer := customerRepository.Create(customer)
+		assert.NoError(t, err)
+		err, dbPurchase := purchaseRepository.Create(dbCustomer, purchase)
+		assert.NoError(t, err)
+		updatedPurchase := &database.Purchase{
+			ID:           dbPurchase.ID,
+			CustomerID:   customer.ID,
+			FrameModel:   "UpdatedModel",
+			LensType:     "UpdatedLensType",
+			LensPower:    "UpdatedLensPower",
+			PD:           "UpdatedPD",
+			PurchaseType: "UpdatedPurchaseType",
+			PurchasedAt:  time.Date(2000, 10, 20, 15, 0, 0, 0, time.UTC),
+		}
+
+		err, updatedDbPurchase := purchaseRepository.Update(updatedPurchase)
+
+		err, dbPurchases := purchaseRepository.GetAll(dbCustomer.ID)
+		assert.NoError(t, err)
+		assert.Len(t, dbPurchases, 1)
+		assertPurchase(t, &dbPurchases[0], updatedDbPurchase)
+		clearRecords(t, db)
+	})
+
 	t.Run("test remove purchase by ID", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)
 		assert.NoError(t, err)
