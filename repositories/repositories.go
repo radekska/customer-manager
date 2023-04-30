@@ -14,6 +14,7 @@ type PurchaseRepository interface {
 	Create(customer *database.Customer, purchase *database.Purchase) (error, *database.Purchase)
 	GetAll(customerID string) (error, []database.Purchase)
 	DeleteByID(purchaseID string) error
+	Update(customer *database.Purchase) (error, *database.Purchase)
 }
 
 type RepairRepository interface {

@@ -297,6 +297,58 @@ const docTemplate = `{
             }
         },
         "/api/customers/{customerID}/purchases/{purchaseID}": {
+            "put": {
+                "description": "Updates a purchase for a customer by ID",
+                "tags": [
+                    "update-customer-purchase"
+                ],
+                "summary": "Update a purchase",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Purchase ID",
+                        "name": "purchaseID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New purchase details",
+                        "name": "customerDetails",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.EditPurchaseRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Purchase"
+                        }
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Deletes a purchase by ID",
                 "tags": [
@@ -469,6 +521,38 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "telephone_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "server.EditPurchaseRequest": {
+            "type": "object",
+            "required": [
+                "frame_model",
+                "lens_power",
+                "lens_type",
+                "pd",
+                "purchase_type",
+                "purchased_at"
+            ],
+            "properties": {
+                "frame_model": {
+                    "type": "string"
+                },
+                "lens_power": {
+                    "type": "string"
+                },
+                "lens_type": {
+                    "type": "string"
+                },
+                "pd": {
+                    "type": "string"
+                },
+                "purchase_type": {
+                    "type": "string"
+                },
+                "purchased_at": {
+                    "description": "TODO - when invalid date specified it returns field is required",
                     "type": "string"
                 }
             }

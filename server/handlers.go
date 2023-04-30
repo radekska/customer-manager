@@ -318,3 +318,81 @@ func deletePurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 		return nil
 	}
 }
+
+// editPurchaseByIDHandler godoc
+//
+//	@Summary		Update a purchase
+//	@Description	Updates a purchase for a customer by ID
+//	@Tags			update-customer-purchase
+//	@Success		200	{object} database.Purchase
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Param			purchaseID	path	string	true "Purchase ID"
+//	@Param			customerDetails	body	server.EditPurchaseRequest	true "New purchase details"
+//	@Router			/api/customers/{customerID}/purchases/{purchaseID} [put]
+func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+
+		_, customer := server.customerRepository.GetByID(customerID)
+		if customer == nil {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+
+		purchaseID := ctx.Params("purchaseID")
+		_, err = uuid.Parse(purchaseID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given purchase id '%s' is not a valid UUID", purchaseID),
+			})
+		}
+
+		newPurchaseDetails := new(EditPurchaseRequest)
+		err = ctx.BodyParser(newPurchaseDetails)
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
+		}
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": err,
+			})
+		}
+
+		validator := getValidator(newPurchaseDetails)
+		if !validator.Validate() {
+			fmt.Println(validator.Errors)
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		}
+
+		_, purchase := server.purchasesRepository.Update(
+			&database.Purchase{
+				ID:           purchaseID,
+				FrameModel:   newPurchaseDetails.FrameModel,
+				LensType:     newPurchaseDetails.LensType,
+				LensPower:    newPurchaseDetails.LensPower,
+				PD:           newPurchaseDetails.PD,
+				CustomerID:   customerID,
+				PurchaseType: newPurchaseDetails.PurchaseType,
+				PurchasedAt:  time.Time(newPurchaseDetails.PurchasedAt),
+			},
+		)
+		if purchase == nil {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("purchase with given id '%s' does not exists", customerID),
+			})
+		}
+		// TODO during update the "created_at": "0001-01-01T00:00:00Z" is zeroed
+		return ctx.Status(fiber.StatusOK).JSON(purchase)
+	}
+}

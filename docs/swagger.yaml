@@ -90,6 +90,29 @@ definitions:
     - last_name
     - telephone_number
     type: object
+  server.EditPurchaseRequest:
+    properties:
+      frame_model:
+        type: string
+      lens_power:
+        type: string
+      lens_type:
+        type: string
+      pd:
+        type: string
+      purchase_type:
+        type: string
+      purchased_at:
+        description: TODO - when invalid date specified it returns field is required
+        type: string
+    required:
+    - frame_model
+    - lens_power
+    - lens_type
+    - pd
+    - purchase_type
+    - purchased_at
+    type: object
 info:
   contact: {}
 paths:
@@ -306,4 +329,39 @@ paths:
       summary: Delete a purchase
       tags:
       - delete-customer-purchase
+    put:
+      description: Updates a purchase for a customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Purchase ID
+        in: path
+        name: purchaseID
+        required: true
+        type: string
+      - description: New purchase details
+        in: body
+        name: customerDetails
+        required: true
+        schema:
+          $ref: '#/definitions/server.EditPurchaseRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Purchase'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Update a purchase
+      tags:
+      - update-customer-purchase
 swagger: "2.0"

@@ -53,6 +53,7 @@ func NewCustomerManagerServer(
 	server.App.Get(purchasesPath, getPurchasesHandler(server))
 	server.App.Post(purchasesPath, createPurchaseHandler(server))
 	server.App.Delete(purchasesPath+"/:purchaseID", deletePurchaseByIDHandler(server))
+	server.App.Put(purchasesPath+"/:purchaseID", editPurchaseByIDHandler(server))
 
 	return server
 }

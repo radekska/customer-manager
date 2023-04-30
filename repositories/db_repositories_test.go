@@ -15,7 +15,10 @@ func clearRecords(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	tables := []string{"customers", "purchases", "repairs"}
 	for _, name := range tables {
-		db.Exec(fmt.Sprintf("DELETE FROM %s", name))
+		tx := db.Exec(fmt.Sprintf("DELETE FROM %s", name))
+		if tx.Error != nil {
+			t.Fatal(tx.Error)
+		}
 	}
 }
 
@@ -78,6 +81,17 @@ func assertPurchase(t *testing.T, expected *database.Purchase, actual *database.
 	assert.Equal(t, expected.FrameModel, actual.FrameModel)
 	assert.Equal(t, expected.LensPower, actual.LensPower)
 	assert.Equal(t, expected.LensType, actual.LensType)
+}
+
+func getCustomerFixture(t *testing.T) *database.Customer {
+	t.Helper()
+	return &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
+}
+
+func getPurchaseFixture(t *testing.T) *database.Purchase {
+	t.Helper()
+	return &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
+		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 }
 
 func TestDBCustomerRepository(t *testing.T) {
@@ -241,13 +255,11 @@ func TestDBCustomerRepository(t *testing.T) {
 func TestDBPurchaseRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
 	purchaseRepository := DBPurchaseRepository{db}
-	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
-	purchase := &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 
 	clearRecords(t, db)
 
 	t.Run("test get all purchases for a customer", func(t *testing.T) {
+		customer := getCustomerFixture(t)
 		purchase1 := database.Purchase{FrameModel: "Model1", LensType: "LensType1",
 			LensPower: "LensPower1", PD: "CustomPD1"}
 		purchase2 := database.Purchase{FrameModel: "Model2", LensType: "LensType2",
@@ -266,10 +278,10 @@ func TestDBPurchaseRepository(t *testing.T) {
 	})
 
 	t.Run("test add purchase to a customer", func(t *testing.T) {
-		err, dbCustomer := customerRepository.Create(customer)
+		err, dbCustomer := customerRepository.Create(getCustomerFixture(t))
 		assert.NoError(t, err)
 
-		err, dbPurchase := purchaseRepository.Create(dbCustomer, purchase)
+		err, dbPurchase := purchaseRepository.Create(dbCustomer, getPurchaseFixture(t))
 
 		assert.NoError(t, err)
 
@@ -284,10 +296,35 @@ func TestDBPurchaseRepository(t *testing.T) {
 		clearRecords(t, db)
 	})
 
-	t.Run("test remove purchase by ID", func(t *testing.T) {
-		err, dbCustomer := customerRepository.Create(customer)
+	t.Run("test update purchase details", func(t *testing.T) {
+		err, dbCustomer := customerRepository.Create(getCustomerFixture(t))
 		assert.NoError(t, err)
-		err, dbPurchase := purchaseRepository.Create(dbCustomer, purchase)
+		err, dbPurchase := purchaseRepository.Create(dbCustomer, getPurchaseFixture(t))
+		assert.NoError(t, err)
+		updatedPurchase := &database.Purchase{
+			ID:           dbPurchase.ID,
+			CustomerID:   dbCustomer.ID,
+			FrameModel:   "UpdatedModel",
+			LensType:     "UpdatedLensType",
+			LensPower:    "UpdatedLensPower",
+			PD:           "UpdatedPD",
+			PurchaseType: "UpdatedPurchaseType",
+			PurchasedAt:  time.Date(2000, 10, 20, 15, 0, 0, 0, time.UTC),
+		}
+
+		err, updatedDbPurchase := purchaseRepository.Update(updatedPurchase)
+
+		err, dbPurchases := purchaseRepository.GetAll(dbCustomer.ID)
+		assert.NoError(t, err)
+		assert.Len(t, dbPurchases, 1)
+		assertPurchase(t, &dbPurchases[0], updatedDbPurchase)
+		clearRecords(t, db)
+	})
+
+	t.Run("test remove purchase by ID", func(t *testing.T) {
+		err, dbCustomer := customerRepository.Create(getCustomerFixture(t))
+		assert.NoError(t, err)
+		err, dbPurchase := purchaseRepository.Create(dbCustomer, getPurchaseFixture(t))
 		assert.NoError(t, err)
 
 		err = purchaseRepository.DeleteByID(dbPurchase.ID)
