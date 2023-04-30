@@ -35,7 +35,8 @@ type CreatePurchaseRequest struct {
 	LensPower    string `json:"lens_power"    validate:"required"`
 	PD           string `json:"pd"            validate:"required"`
 	PurchaseType string `json:"purchase_type" validate:"required"`
-	PurchasedAt  Date   `json:"purchased_at"  validate:"required"` // TODO - when invalid date specified it returns field is required
+	// TODO - when invalid date specified it returns field is required
+	PurchasedAt Date `json:"purchased_at"  validate:"required"`
 }
 
 type EditPurchaseRequest = CreatePurchaseRequest

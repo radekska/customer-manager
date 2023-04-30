@@ -10,8 +10,10 @@ jobs:
       - uses: actions/setup-go@v3
         name: Install Go
         with:
-          go-version: '1.19.1'
+          go-version: "1.20"
+      - name: Run static analysis
+        run: make static-analysis
       - name: Run database migrations
-        run: go run ./cmd/migrate/migrate.go
+        run: make migrate
       - name: Run tests
-        run: go test -v ./...
+        run: make tests

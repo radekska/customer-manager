@@ -1,0 +1,61 @@
+run:
+  skip-files:
+    - ".*_test.go"
+
+linters-settings:
+  godox:
+    keywords:
+      - BUG
+      - FIXME
+      - NOTE
+#      - TODO
+      - OPTIMIZE
+      - HACK
+  dupl:
+    threshold: 95
+  funlen:
+    lines: 65
+    statements: 40
+  gocognit:
+    min-complexity: 25
+  goconst:
+    min-occurrences: 4
+  lll:
+    line-length: 120
+  revive:
+    rules:
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#exported
+      - name: exported
+        disabled: true
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#package-comments
+      - name: package-comments
+        disabled: true
+
+output:
+  format: github-actions
+
+linters:
+  disable-all: true
+  enable:
+    - revive
+    - staticcheck
+    - depguard
+    - gosec
+    - dogsled
+    - godox
+    - megacheck
+    - govet
+    - gocyclo
+    - lll
+    - funlen
+    - gocognit
+    - dupl
+    - whitespace
+    - goconst
+    - unconvert
+    - gofmt
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
