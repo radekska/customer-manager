@@ -38,6 +38,8 @@ type CreatePurchaseRequest struct {
 	PurchasedAt  Date   `json:"purchased_at"  validate:"required"` // TODO - when invalid date specified it returns field is required
 }
 
+type EditPurchaseRequest = CreatePurchaseRequest
+
 func getValidator(s interface{}) *validate.Validation {
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false

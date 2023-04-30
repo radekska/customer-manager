@@ -101,6 +101,20 @@ func (s *StubPurchaseRepository) DeleteByID(purchaseID string) error {
 	return &repositories.PurchaseNotFoundError{PurchaseID: purchaseID}
 }
 
+func (s *StubPurchaseRepository) Update(purchase *database.Purchase) (error, *database.Purchase) {
+	err, purchases := s.GetAll(purchase.CustomerID)
+	if err != nil {
+		return err, nil
+	}
+	for idx, currentPurchase := range purchases {
+		if currentPurchase.ID == purchase.ID {
+			purchases[idx] = *purchase
+			return nil, purchase
+		}
+	}
+	return &repositories.PurchaseNotFoundError{PurchaseID: purchase.ID}, nil
+}
+
 func makeRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
 	t.Helper()
 	req, err := http.NewRequest(method, path, body)
@@ -660,6 +674,62 @@ func TestPurchaseHandlers(t *testing.T) {
 			},
 			actualPurchase,
 		)
+	})
+
+	t.Run("test update purchase for a customer", func(t *testing.T) {
+		purchases := []database.Purchase{{
+			ID:           "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+			FrameModel:   "Model1",
+			LensType:     "Lens1",
+			LensPower:    "Power1",
+			PD:           "PD1",
+			PurchaseType: "PurchaseType1",
+			PurchasedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+			CustomerID:   customer.ID,
+		}, {
+			ID:           "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+			FrameModel:   "Model2",
+			LensType:     "Lens2",
+			LensPower:    "Power2",
+			PD:           "PD2",
+			PurchaseType: "PurchaseType2",
+			PurchasedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			CustomerID:   customer.ID,
+		}}
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{
+			customers: []database.Customer{customer}}, &StubPurchaseRepository{purchases: purchases})
+
+		body, _ := json.Marshal(
+			map[string]string{
+				"frame_model":   "UpdatedModel1",
+				"lens_type":     "UpdatedLens1",
+				"lens_power":    "UpdatedPower1",
+				"pd":            "UpdatedPD1",
+				"purchase_type": "UpdatedPurchaseType1",
+				"purchased_at":  "2025-01-01",
+			},
+		)
+		req := makeRequest(
+			t,
+			http.MethodPut,
+			fmt.Sprintf("/api/customers/%s/purchases/%s", customer.ID, "ca1224cb-c993-4d45-8053-73c56aaf2c77"),
+			bytes.NewBuffer(body))
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+		assertResponse(t, resp, map[string]string{
+			"created_at":    "0001-01-01T00:00:00Z",
+			"customer_id":   customer.ID,
+			"frame_model":   "UpdatedModel1",
+			"id":            "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+			"lens_power":    "UpdatedPower1",
+			"lens_type":     "UpdatedLens1",
+			"pd":            "UpdatedPD1",
+			"purchase_type": "UpdatedPurchaseType1",
+			"purchased_at":  "2025-01-01T00:00:00Z",
+			"updated_at":    "0001-01-01T00:00:00Z",
+		})
 	})
 
 	t.Run("test delete purchase for a customer", func(t *testing.T) {
