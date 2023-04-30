@@ -14,7 +14,9 @@ jobs:
       - name: Run static analysis
         uses: golangci/golangci-lint-action@v3
         with:
-          version: latest
+          version: "v1.52.2"
+          config: .golangci.yml
+          out-format: github-actions
       - name: Run database migrations
         run: make migrate
       - name: Run tests
