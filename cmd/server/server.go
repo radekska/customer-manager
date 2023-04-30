@@ -22,5 +22,4 @@ func main() {
 	)
 
 	panic(customerManagerServer.App.Listen(":8080"))
-
 }
