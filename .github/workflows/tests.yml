@@ -15,8 +15,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: "v1.52.2"
-          config: .golangci.yml
-          out-format: github-actions
       - name: Run database migrations
         run: make migrate
       - name: Run tests
