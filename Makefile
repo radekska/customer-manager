@@ -7,8 +7,8 @@ help: ## Show help
 migrate: ## Run database migrations
 	go run cmd/migrate/migrate.go
 
-start: ## Start the server
-	go run cmd/server/server.go
+start: ## Start the application
+	dev/start.sh
 
 tests: ## Run unit tests
 	go test -coverprofile=/tmp/customer-manager.out ./...

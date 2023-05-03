@@ -16,6 +16,8 @@ FROM golang:1.20.3-bullseye as customer-manager
 ENV WORKDIR /home/appuser/app
 ENV BUILDPATH $WORKDIR/customer-manager
 
+WORKDIR ${WORKDIR} 
+
 RUN useradd -s /bin/bash -U -u 10001 appuser -m
 USER appuser
 COPY --from=builder $BUILDPATH /usr/local/bin/customer-manager
