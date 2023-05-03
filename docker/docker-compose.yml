@@ -9,8 +9,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - database
-      - customer-manager-migrations
+      database:
+        condition: service_healthy
+      customer-manager-migrations:
+        condition: service_completed_successfully
 
   customer-manager-migrations:
     build:
@@ -20,7 +22,8 @@ services:
       - ../.env
     command: customer-manager-migrations
     depends_on:
-      - database
+      database:
+        condition: service_healthy
 
   database:
     image: mysql:8.0
@@ -31,3 +34,9 @@ services:
       MYSQL_PASSWORD: secret123
       MYSQL_USER: admin
       MYSQL_ROOT_PASSWORD: secret123
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://database:3306"]
+      interval: 20s 
+      timeout: 10s 
+      retries: 3 
+      start_period: 5s

@@ -9,8 +9,17 @@ import (
 	"time"
 )
 
-func GetDatabase(dsn string, config *gorm.Config) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(dsn), config)
+func getDatabaseURL() string {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		panic("DATABASE_URL environment variable is not set")
+	}
+	return dsn
+}
+
+func GetDatabase(config *gorm.Config) *gorm.DB {
+	dialector := mysql.Open(getDatabaseURL())
+	db, err := gorm.Open(dialector, config)
 	if err != nil {
 		panic("failed to connect database")
 	}

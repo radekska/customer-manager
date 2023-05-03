@@ -21,5 +21,4 @@ USER appuser
 COPY --from=builder $BUILDPATH /usr/local/bin/customer-manager
 COPY --from=builder ${BUILDPATH}-migartions /usr/local/bin/customer-manager-migrations
 
-#CMD customer-manager
-CMD sleep infinity
+CMD customer-manager
