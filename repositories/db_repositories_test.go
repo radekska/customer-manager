@@ -101,7 +101,7 @@ func TestDBCustomerRepository(t *testing.T) {
 
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 	purchase := &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD"}
+		LensPower: "LensPower", PD: "CustomPD", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32}
 
 	clearRecords(t, db)
@@ -261,9 +261,9 @@ func TestDBPurchaseRepository(t *testing.T) {
 	t.Run("test get all purchases for a customer", func(t *testing.T) {
 		customer := getCustomerFixture(t)
 		purchase1 := database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-			LensPower: "LensPower1", PD: "CustomPD1"}
+			LensPower: "LensPower1", PD: "CustomPD1", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 		purchase2 := database.Purchase{FrameModel: "Model2", LensType: "LensType2",
-			LensPower: "LensPower2", PD: "CustomPD2"}
+			LensPower: "LensPower2", PD: "CustomPD2", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 		customer.Purchases = []database.Purchase{purchase1, purchase2}
 		err, customer := customerRepository.Create(customer)
 		assert.NoError(t, err)

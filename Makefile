@@ -11,7 +11,7 @@ start: ## Start the application
 	dev/start.sh
 
 tests: ## Run unit tests
-	dev/tests.sh
+	dev/test.sh
 
 coverage: tests ## Run tests with coverage
 	@go tool cover -html=/tmp/customer-manager.out
