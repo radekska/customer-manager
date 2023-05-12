@@ -15,9 +15,12 @@ RUN go build -o  ${MIGRATIONS} ${WORKDIR}/cmd/migrate/migrate.go
 
 FROM golang:1.20.3-bullseye as customer-manager
 
+ENV WORKDIR /home/appuser/app
 ENV BUILDPATH /home/appuser/build
 ENV SERVER ${BUILDPATH}/customer-manager
 ENV MIGRATIONS ${BUILDPATH}/customer-manager-migrations 
+
+WORKDIR $WORKDIR
 
 RUN useradd -s /bin/bash -U -u 10001 appuser
 USER appuser

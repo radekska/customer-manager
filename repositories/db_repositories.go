@@ -91,7 +91,7 @@ func (d *DBPurchaseRepository) Create(
 
 func (d *DBPurchaseRepository) GetAll(customerID string) (error, []database.Purchase) {
 	var purchases []database.Purchase
-	result := d.DB.Where("customer_id = ?", customerID).Find(&purchases)
+	result := d.DB.Where("customer_id = ?", customerID).Order("purchased_at desc").Find(&purchases)
 	return result.Error, purchases
 }
 

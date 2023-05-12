@@ -263,7 +263,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 		purchase1 := database.Purchase{FrameModel: "Model1", LensType: "LensType1",
 			LensPower: "LensPower1", PD: "CustomPD1", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 		purchase2 := database.Purchase{FrameModel: "Model2", LensType: "LensType2",
-			LensPower: "LensPower2", PD: "CustomPD2", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
+			LensPower: "LensPower2", PD: "CustomPD2", PurchasedAt: time.Date(2019, 1, 1, 0, 0, 0, 0, time.UTC)}
 		customer.Purchases = []database.Purchase{purchase1, purchase2}
 		err, customer := customerRepository.Create(customer)
 		assert.NoError(t, err)
@@ -271,6 +271,7 @@ func TestDBPurchaseRepository(t *testing.T) {
 		err, purchases := purchaseRepository.GetAll(customer.ID)
 
 		assert.NoError(t, err)
+    assert.Len(t, purchases, 2)
 		assertPurchase(t, &purchase1, &purchases[0])
 		assertPurchase(t, &purchase2, &purchases[1])
 
