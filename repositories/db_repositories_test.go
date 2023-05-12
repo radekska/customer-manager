@@ -157,9 +157,9 @@ func TestDBCustomerRepository(t *testing.T) {
 	t.Run("test get all customers", func(t *testing.T) {
 		var customers []database.Customer
 		customersData := []database.Customer{
-			{FirstName: "John", LastName: "Doe", TelephoneNumber: "123"},
-			{FirstName: "Jane", LastName: "Doe", TelephoneNumber: "321"},
-			{FirstName: "Bob", LastName: "Smith", TelephoneNumber: "893"},
+			{FirstName: "Alice", LastName: "Doe", TelephoneNumber: "123"},
+			{FirstName: "Bob", LastName: "Doe", TelephoneNumber: "321"},
+			{FirstName: "Xin", LastName: "Smith", TelephoneNumber: "893"},
 		}
 		for _, customerData := range customersData {
 			err, customer := customerRepository.Create(
@@ -174,7 +174,7 @@ func TestDBCustomerRepository(t *testing.T) {
 			customers = append(customers, *customer)
 		}
 
-		err, dbCustomers := customerRepository.ListBy("J", "Do")
+		err, dbCustomers := customerRepository.ListBy("", "Do")
 
 		assert.NoError(t, err)
 		assertCustomer(t, &customers[0], &dbCustomers[0])
