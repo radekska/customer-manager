@@ -55,7 +55,7 @@ func (d *DBCustomerRepository) ListBy(customerFirstName string, customerLastName
 		firstNameQuery := fmt.Sprintf("%%%s%%", firstName)
 		lastNameQuery := fmt.Sprintf("%%%s%%", lastName)
 		result = d.DB.Where("LOWER(first_name) LIKE ? AND LOWER(last_name) LIKE ?",
-			firstNameQuery, lastNameQuery).Find(&customers)
+			firstNameQuery, lastNameQuery).Order("first_name asc").Find(&customers)
 	}
 
 	return result.Error, customers
@@ -91,7 +91,7 @@ func (d *DBPurchaseRepository) Create(
 
 func (d *DBPurchaseRepository) GetAll(customerID string) (error, []database.Purchase) {
 	var purchases []database.Purchase
-	result := d.DB.Where("customer_id = ?", customerID).Find(&purchases)
+	result := d.DB.Where("customer_id = ?", customerID).Order("purchased_at desc").Find(&purchases)
 	return result.Error, purchases
 }
 

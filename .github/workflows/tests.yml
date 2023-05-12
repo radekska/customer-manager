@@ -16,7 +16,7 @@ jobs:
         with:
           version: "v1.52.2"
           args: --timeout=10m
-      - name: Run database migrations
-        run: make migrate
+      - name: Run application
+        run: make start
       - name: Run tests
         run: make tests

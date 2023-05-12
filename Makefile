@@ -4,14 +4,11 @@ SHELL := /bin/bash
 help: ## Show help
 	@echo -e "$$(grep -hE '^\S+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)"
 
-migrate: ## Run database migrations
-	go run cmd/migrate/migrate.go
-
-start: ## Start the server
-	go run cmd/server/server.go
+start: ## Start the application
+	dev/start.sh
 
 tests: ## Run unit tests
-	go test -coverprofile=/tmp/customer-manager.out ./...
+	dev/test.sh
 
 coverage: tests ## Run tests with coverage
 	@go tool cover -html=/tmp/customer-manager.out
