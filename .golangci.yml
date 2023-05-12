@@ -21,7 +21,7 @@ linters-settings:
   goconst:
     min-occurrences: 4
   lll:
-    line-length: 120
+    line-length: 130
   revive:
     rules:
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#exported
