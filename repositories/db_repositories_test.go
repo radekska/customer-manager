@@ -13,7 +13,7 @@ import (
 
 func clearRecords(t *testing.T, db *gorm.DB) {
 	t.Helper()
-	tables := []string{"customers", "purchases", "repairs"}
+	tables := []string{"purchases", "repairs", "customers"}
 	for _, name := range tables {
 		tx := db.Exec(fmt.Sprintf("DELETE FROM %s", name))
 		if tx.Error != nil {
