@@ -6,12 +6,16 @@ kill_timeout = 5
 processes = []
 
 [build]
-  dockerfile = "docker/Dockerfile"
+  dockerfile = "../docker/Dockerfile"
 
 [env]
 
 [experimental]
   auto_rollback = true
+
+[deploy]
+  release_command = "customer-manager-migrations"
+
 
 [[services]]
   http_checks = []
