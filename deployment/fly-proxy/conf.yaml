@@ -22,6 +22,4 @@ http:
     backend:
       rule: "PathPrefix(`/api/*`)"
       service: customer-manager
-api:
-  insecure: true
 
