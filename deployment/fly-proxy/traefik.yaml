@@ -1,26 +1,6 @@
-entryPoints:
-  web:
-    address: ":80"
-
-  websecure:
-    address: ":443"
-
-http:
-  services:
-    customer-manager:
-      loadBalancer:
-        servers:
-        - url: "http://customer-manager.internal:8080/"
-    customer-manager-ui:
-      loadBalancer:
-        servers:
-        - url: "http://customer-manager-ui.internal:3000/"
-  routers:
-    frontend:
-      rule: "Path(`/`)"
-      service: customer-manager-ui
-    backend:
-      rule: "PathPrefix(`/api/*`)"
-      service: customer-manager
+providers:
+  file:
+    filename: /etc/traefik/conf.yaml
 api:
+  dashboard: true
   insecure: true
