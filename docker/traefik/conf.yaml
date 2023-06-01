@@ -13,11 +13,11 @@ http:
     frontend:
       rule: "PathPrefix(`/`)"
       entrypoints:
-        - web
+        - websecure
       service: customer-manager-ui
     backend:
       rule: "PathPrefix(`/api`)"
       entrypoints:
-        - web
+        - websecure
       service: customer-manager
 
