@@ -4,7 +4,7 @@ http:
     customer-manager:
       loadBalancer:
         servers:
-        - url: "http://customer-manager:8080"
+        - url: "http://customer-manager.internal:8080"
     customer-manager-ui:
       loadBalancer:
         servers:

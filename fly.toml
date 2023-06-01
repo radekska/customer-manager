@@ -1,0 +1,13 @@
+app = "customer-manager"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[build]
+  dockerfile = "./docker/Dockerfile"
+
+[experimental]
+  auto_rollback = true
+
+[deploy]
+  release_command = "customer-manager-migrations"

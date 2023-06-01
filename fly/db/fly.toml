@@ -1,0 +1,18 @@
+app = "customer-manager-db"
+primary_region = "waw"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[build]
+  image = "mysql:8.0.32"
+
+[env]
+  MYSQL_DATABASE = "customer-manager"
+  MYSQL_USER = "customer-manager"
+
+[processes]
+  app = "--datadir /data/mysql  --default-authentication-plugin mysql_native_password --performance-schema=OFF --innodb-buffer-pool-size 64M"
+
+[[mounts]]
+  source = "customer_manager_data"
+  destination = "/data"
