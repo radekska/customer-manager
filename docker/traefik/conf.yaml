@@ -8,7 +8,7 @@ http:
     customer-manager-ui:
       loadBalancer:
         servers:
-        - url: "http://customer-manager-ui.internal:3000/"
+        - url: "http://customer-manager-ui:3000"
   routers:
     frontend:
       rule: "Path(`/`)"
