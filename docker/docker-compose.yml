@@ -14,6 +14,11 @@ services:
       customer-manager-migrations:
         condition: service_completed_successfully
 
+  customer-manager-ui:
+    image: customer-manager/customer-manager-ui:latest
+    ports:
+      - "3000:3000"
+
   proxy:
     build:
       context: traefik/
