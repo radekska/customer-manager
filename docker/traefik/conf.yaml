@@ -1,9 +1,3 @@
-entryPoints:
-  web:
-    address: ":80"
-
-  websecure:
-    address: ":443"
 
 http:
   services:
@@ -18,8 +12,12 @@ http:
   routers:
     frontend:
       rule: "Path(`/`)"
+      entrypoints:
+        - websecure
       service: customer-manager-ui
     backend:
-      rule: "PathPrefix(`/api/*`)"
+      rule: "PathPrefix(`/api`)"
+      entrypoints:
+        - websecure
       service: customer-manager
 
