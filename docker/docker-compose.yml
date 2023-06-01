@@ -6,8 +6,6 @@ services:
       dockerfile: ./docker/Dockerfile
     env_file:
       - ../.env
-    ports:
-      - "8080:8080"
     volumes:
       - ../:/home/appuser/app:rw
     depends_on:
@@ -15,6 +13,14 @@ services:
         condition: service_healthy
       customer-manager-migrations:
         condition: service_completed_successfully
+
+  proxy:
+    build:
+      context: traefik/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "80:80"
 
   customer-manager-migrations:
     build:

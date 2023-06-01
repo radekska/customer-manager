@@ -4,7 +4,7 @@ http:
     customer-manager:
       loadBalancer:
         servers:
-        - url: "http://customer-manager.internal:8080/"
+        - url: "http://customer-manager:8080/"
     customer-manager-ui:
       loadBalancer:
         servers:
@@ -13,11 +13,11 @@ http:
     frontend:
       rule: "Path(`/`)"
       entrypoints:
-        - websecure
+        - web
       service: customer-manager-ui
     backend:
       rule: "PathPrefix(`/api`)"
       entrypoints:
-        - websecure
+        - web
       service: customer-manager
 
