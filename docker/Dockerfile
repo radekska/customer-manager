@@ -27,6 +27,6 @@ USER appuser
 COPY --from=builder ${SERVER} /go/bin/customer-manager
 COPY --from=builder ${MIGRATIONS} /go/bin/customer-manager-migrations
 
-EXPOSE 9000
+EXPOSE 8080
 
 CMD customer-manager

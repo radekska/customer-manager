@@ -20,7 +20,7 @@ func getServerPort() string {
 }
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{Network: fiber.NetworkTCP})
 	db := database.GetDatabase(&gorm.Config{Logger: database.GetLogger(logger.Info)})
 	customerManagerServer := server.NewCustomerManagerServer(
 		app,
