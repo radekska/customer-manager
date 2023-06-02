@@ -1,11 +1,11 @@
-name: Deploy On Fly
+name: Deploy on fly
 on:
   push:
     branches:
       - master
 jobs:
   deploy:
-    name: Deploy Service
+    name: Deploy service
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
