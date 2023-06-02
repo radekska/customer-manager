@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for customer-manager on 2023-06-01T23:32:46+02:00
+# fly.toml app configuration file generated for customer-manager-api on 2023-06-02T08:13:57+02:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "customer-manager"
+app = "customer-manager-api"
 primary_region = "waw"
 kill_signal = "SIGINT"
 kill_timeout = "5s"
@@ -18,7 +18,8 @@ kill_timeout = "5s"
   release_command = "customer-manager-migrations"
 
 [http_service]
-  internal_port = 8080
+  internal_port = 9000
+  force_https = true
   auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 0
