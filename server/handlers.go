@@ -5,9 +5,10 @@ import (
 	"customer-manager/repositories"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"time"
 )
 
 // getCustomersHandler godoc
@@ -190,6 +191,23 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	}
 }
 
+func genericListHandler[V []database.Purchase | []database.Repair](getAll func(customerID string) (error, V)) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, items := getAll(customerID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+		return ctx.Status(fiber.StatusOK).JSON(items)
+	}
+}
+
 // getPurchasesHandler godoc
 //
 //	@Summary		Get list of purchases
@@ -200,20 +218,7 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Param			customerID	path	string	true "Customer ID"
 //	@Router			/api/customers/{customerID}/purchases [get]
 func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		customerID := ctx.Params("customerID")
-		_, err := uuid.Parse(customerID)
-		if err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
-			})
-		}
-		err, purchases := server.purchasesRepository.GetAll(customerID)
-		if err != nil {
-			return fiber.ErrInternalServerError
-		}
-		return ctx.Status(fiber.StatusOK).JSON(purchases)
-	}
+	return genericListHandler[[]database.Purchase](server.purchasesRepository.GetAll)
 }
 
 // createPurchaseHandler godoc
@@ -407,18 +412,5 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Param			customerID	path	string	true "Customer ID"
 //	@Router			/api/customers/{customerID}/repairs [get]
 func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		customerID := ctx.Params("customerID")
-		_, err := uuid.Parse(customerID)
-		if err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
-			})
-		}
-		err, purchases := server.repairsRepository.GetAll(customerID)
-		if err != nil {
-			return fiber.ErrInternalServerError
-		}
-		return ctx.Status(fiber.StatusOK).JSON(purchases)
-	}
+	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
 }

@@ -2,12 +2,13 @@ package server
 
 import (
 	_ "customer-manager/docs"
+	"customer-manager/repositories"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/swagger"
 )
-import "customer-manager/repositories"
 
 type CustomerManagerServer struct {
 	App                 *fiber.App
@@ -58,8 +59,8 @@ func NewCustomerManagerServer(
 	server.App.Delete(purchasesPath+"/:purchaseID", deletePurchaseByIDHandler(server))
 	server.App.Put(purchasesPath+"/:purchaseID", editPurchaseByIDHandler(server))
 
- 	repairsPath := customersPath + "/:customerID" + "/repairs"
-  server.App.Get(repairsPath, getRepairsHandler(server))
+	repairsPath := customersPath + "/:customerID" + "/repairs"
+	server.App.Get(repairsPath, getRepairsHandler(server))
 
 	return server
 }
