@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"customer-manager/database"
-	"errors"
 	"fmt"
 	"gorm.io/gorm"
 )
@@ -17,13 +16,20 @@ func (r *RepairNotFoundError) Error() string {
 }
 
 type DBRepairRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
+func (d *DBRepairRepository) GetAll(customerID string) (error, []database.Repair) {
+	var repairs []database.Repair
+ 	result := d.DB.Where("customer_id = ?", customerID).Order("created_at desc").Find(&repairs)
+	return result.Error, repairs
+}
+
+
 func (d *DBRepairRepository) Create(customer *database.Customer, repair *database.Repair) (error, *database.Repair) {
-	return d.db.Model(customer).Association("Repairs").Append(repair), repair
+	return d.DB.Model(customer).Association("Repairs").Append(repair), repair
 }
 
 func (d *DBRepairRepository) DeleteByID(repairID string) error {
-	return d.db.Delete(&database.Repair{ID: repairID}).Error
+	return d.DB.Delete(&database.Repair{ID: repairID}).Error
 }

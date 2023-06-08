@@ -9,7 +9,7 @@ import (
 
 func TestDBRepairRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
-	repairRepository := DBRepairRepository{db: db}
+	repairRepository := DBRepairRepository{db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
 	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32}
 

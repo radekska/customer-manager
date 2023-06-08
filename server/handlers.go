@@ -396,3 +396,29 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 		return ctx.Status(fiber.StatusOK).JSON(purchase)
 	}
 }
+
+// getRepairsHandler godoc
+//
+//	@Summary		Get list of repairs
+//	@Description	Returns full list of repairs for a specific customer by ID
+//	@Tags			get-customer-repairs
+//	@Produce		json
+//	@Success		200	{array} database.Repairs
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Router			/api/customers/{customerID}/repairs [get]
+func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, purchases := server.repairsRepository.GetAll(customerID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+		return ctx.Status(fiber.StatusOK).JSON(purchases)
+	}
+}
