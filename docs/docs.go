@@ -389,6 +389,38 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/customers/{customerID}/repairs": {
+            "get": {
+                "description": "Returns full list of repairs for a specific customer by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get-customer-repairs"
+                ],
+                "summary": "Get list of repairs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.Repair"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -451,6 +483,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "database.Repair": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }

@@ -403,7 +403,7 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Returns full list of repairs for a specific customer by ID
 //	@Tags			get-customer-repairs
 //	@Produce		json
-//	@Success		200	{array} database.Repairs
+//	@Success		200	{array} database.Repair
 //	@Param			customerID	path	string	true "Customer ID"
 //	@Router			/api/customers/{customerID}/repairs [get]
 func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {

@@ -41,6 +41,19 @@ definitions:
       updated_at:
         type: string
     type: object
+  database.Repair:
+    properties:
+      cost:
+        type: number
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+    type: object
   server.CreateCustomerRequest:
     properties:
       first_name:
@@ -364,4 +377,25 @@ paths:
       summary: Update a purchase
       tags:
       - update-customer-purchase
+  /api/customers/{customerID}/repairs:
+    get:
+      description: Returns full list of repairs for a specific customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Repair'
+            type: array
+      summary: Get list of repairs
+      tags:
+      - get-customer-repairs
 swagger: "2.0"
