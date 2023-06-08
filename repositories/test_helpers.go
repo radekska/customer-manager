@@ -3,11 +3,12 @@ package repositories
 import (
 	"customer-manager/database"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"testing"
-	"time"
 )
 
 func clearRecords(t *testing.T, db *gorm.DB) {
@@ -89,9 +90,12 @@ func getCustomerFixture(t *testing.T) *database.Customer {
 
 func getPurchaseFixture(t *testing.T) *database.Purchase {
 	t.Helper()
-	return &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD", PurchaseType: "CustomPurchaseType", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
+	return &database.Purchase{
+		FrameModel:   "Model1",
+		LensType:     "LensType1",
+		LensPower:    "LensPower",
+		PD:           "CustomPD",
+		PurchaseType: "CustomPurchaseType",
+		PurchasedAt:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
 }
-
-
-

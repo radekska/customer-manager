@@ -3,9 +3,9 @@ package repositories
 import (
 	"customer-manager/database"
 	"fmt"
+
 	"gorm.io/gorm"
 )
-
 
 type RepairNotFoundError struct {
 	RepairID string
@@ -21,12 +21,14 @@ type DBRepairRepository struct {
 
 func (d *DBRepairRepository) GetAll(customerID string) (error, []database.Repair) {
 	var repairs []database.Repair
- 	result := d.DB.Where("customer_id = ?", customerID).Order("created_at desc").Find(&repairs)
+	result := d.DB.Where("customer_id = ?", customerID).Order("created_at desc").Find(&repairs)
 	return result.Error, repairs
 }
 
-
-func (d *DBRepairRepository) Create(customer *database.Customer, repair *database.Repair) (error, *database.Repair) {
+func (d *DBRepairRepository) Create(
+	customer *database.Customer,
+	repair *database.Repair,
+) (error, *database.Repair) {
 	return d.DB.Model(customer).Association("Repairs").Append(repair), repair
 }
 

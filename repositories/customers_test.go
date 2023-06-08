@@ -2,10 +2,11 @@ package repositories
 
 import (
 	"customer-manager/database"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDBCustomerRepository(t *testing.T) {

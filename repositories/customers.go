@@ -4,9 +4,10 @@ import (
 	"customer-manager/database"
 	"errors"
 	"fmt"
+	"strings"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"strings"
 )
 
 type DBCustomerRepository struct {
