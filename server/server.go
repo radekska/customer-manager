@@ -13,6 +13,7 @@ type CustomerManagerServer struct {
 	App                 *fiber.App
 	customerRepository  repositories.CustomerRepository
 	purchasesRepository repositories.PurchaseRepository
+	repairsRepository   repositories.RepairRepository
 }
 
 func mountMiddlewares(server *CustomerManagerServer) {
@@ -31,11 +32,13 @@ func NewCustomerManagerServer(
 	app *fiber.App,
 	customerRepository repositories.CustomerRepository,
 	purchasesRepository repositories.PurchaseRepository,
+	repairsRepository repositories.RepairRepository,
 ) *CustomerManagerServer {
 	server := &CustomerManagerServer{
 		App:                 app,
 		customerRepository:  customerRepository,
 		purchasesRepository: purchasesRepository,
+		repairsRepository:   repairsRepository,
 	}
 
 	mountMiddlewares(server)

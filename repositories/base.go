@@ -19,5 +19,6 @@ type PurchaseRepository interface {
 
 type RepairRepository interface {
 	Create(customer *database.Customer, repair *database.Repair) (error, *database.Repair)
+  GetAll(customerID string) (error, []database.Repair)
 	DeleteByID(repairID string) error
 }

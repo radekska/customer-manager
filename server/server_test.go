@@ -100,7 +100,6 @@ func (s *StubPurchaseRepository) DeleteByID(purchaseID string) error {
 	}
 	return &repositories.PurchaseNotFoundError{PurchaseID: purchaseID}
 }
-
 func (s *StubPurchaseRepository) Update(purchase *database.Purchase) (error, *database.Purchase) {
 	err, purchases := s.GetAll(purchase.CustomerID)
 	if err != nil {
@@ -113,6 +112,51 @@ func (s *StubPurchaseRepository) Update(purchase *database.Purchase) (error, *da
 		}
 	}
 	return &repositories.PurchaseNotFoundError{PurchaseID: purchase.ID}, nil
+}
+
+type StubRepairRepository struct {
+	repairIDToCreate string
+	repairs          []database.Repair
+}
+
+func (s *StubRepairRepository) Create(customer *database.Customer, repair *database.Repair) (error, *database.Repair) {
+	repair.CustomerID = customer.ID
+	if repair.ID == "" {
+		repair.ID = s.repairIDToCreate
+	}
+	customer.Repairs = append(customer.Repairs, *repair)
+	s.repairs = append(s.repairs, *repair)
+	return nil, repair
+
+}
+func (s *StubRepairRepository) GetAll(customerID string) (error, []database.Repair) {
+	var customerRepairs []database.Repair
+	for _, repair := range s.repairs {
+		if repair.CustomerID == customerID {
+			customerRepairs = append(customerRepairs, repair)
+		}
+	}
+	return nil, customerRepairs
+}
+
+func (s *StubRepairRepository) DeleteByID(repairID string) error {
+	for idx, repair := range s.repairs {
+		if repair.ID == repairID {
+			s.repairs = append(s.repairs[:idx], s.repairs[idx+1:]...)
+			return nil
+		}
+	}
+	return &repositories.RepairNotFoundError{RepairID: repairID}
+}
+
+func getCustomer() database.Customer {
+	return database.Customer{
+		ID:              "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+		FirstName:       "John",
+		LastName:        "Doe",
+		TelephoneNumber: "123-456-789",
+	}
+
 }
 
 func makeRequest(t *testing.T, method string, path string, body io.Reader) *http.Request {
@@ -559,13 +603,7 @@ func TestCustomerHandlers(t *testing.T) {
 }
 
 func TestPurchaseHandlers(t *testing.T) {
-	customer := database.Customer{
-		ID:              "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
-		FirstName:       "John",
-		LastName:        "Doe",
-		TelephoneNumber: "123-456-789",
-	}
-
+	customer := getCustomer()
 	t.Run("test get all purchases", func(t *testing.T) {
 		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{})
 		err, _ := server.purchasesRepository.Create(
@@ -805,5 +843,77 @@ func TestPurchaseHandlers(t *testing.T) {
 		assertBadRequestResponse(t, resp, map[string]string{
 			"detail": fmt.Sprintf("given purchase id '%s' is not a valid UUID", invalidID),
 		})
+	})
+}
+
+func TestRepairHandler(t *testing.T) {
+	customer := getCustomer()
+	t.Run("test list repairs for a customer", func(t *testing.T) {
+		server := NewCustomerManagerServer(fiber.New(), &StubCustomerRepository{}, &StubPurchaseRepository{}, &StubRepairRepository{})
+		err, _ := server.purchasesRepository.Create(
+			&customer,
+			&database.Purchase{
+				ID:           "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+				FrameModel:   "Model1",
+				LensType:     "Lens1",
+				LensPower:    "Power1",
+				PD:           "PD1",
+				PurchaseType: "PurchaseType1",
+				PurchasedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+		)
+		assert.NoError(t, err)
+		err, _ = server.purchasesRepository.Create(
+			&customer,
+			&database.Purchase{
+				ID:           "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+				FrameModel:   "Model2",
+				LensType:     "Lens2",
+				LensPower:    "Power2",
+				PD:           "PD2",
+				PurchaseType: "PurchaseType2",
+				PurchasedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+		)
+		assert.NoError(t, err)
+		req := makeRequest(t, http.MethodGet, "/api/customers/ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f/purchases", nil)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		var actualPurchases []map[string]string
+		err = json.NewDecoder(resp.Body).Decode(&actualPurchases)
+		assert.NoError(t, err)
+		assert.Equal(
+			t,
+			[]map[string]string{
+				{
+					"created_at":    "0001-01-01T00:00:00Z",
+					"customer_id":   "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model":   "Model1",
+					"id":            "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+					"lens_power":    "Power1",
+					"lens_type":     "Lens1",
+					"pd":            "PD1",
+					"purchase_type": "PurchaseType1",
+					"purchased_at":  "2022-01-01T00:00:00Z",
+					"updated_at":    "0001-01-01T00:00:00Z",
+				},
+				{
+					"created_at":    "0001-01-01T00:00:00Z",
+					"customer_id":   "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+					"frame_model":   "Model2",
+					"id":            "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+					"lens_power":    "Power2",
+					"lens_type":     "Lens2",
+					"pd":            "PD2",
+					"purchase_type": "PurchaseType2",
+					"purchased_at":  "2021-01-01T00:00:00Z",
+					"updated_at":    "0001-01-01T00:00:00Z",
+				},
+			},
+			actualPurchases,
+		)
+
 	})
 }
