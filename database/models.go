@@ -47,6 +47,7 @@ type Repair struct {
 	Cost        float64   `gorm:"precision:2" json:"cost"`
 	CustomerID  string    `gorm:"size:256"    json:"customer_id"`
 	CreatedAt   time.Time `                   json:"created_at"`
+	ReportedAt  time.Time `gorm:"type:date"   json:"reported_at"`
 }
 
 func (r *Repair) BeforeCreate(tx *gorm.DB) (err error) {

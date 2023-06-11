@@ -936,6 +936,33 @@ func TestPurchaseHandlers(t *testing.T) {
 
 func TestRepairHandler(t *testing.T) {
 	customer := getCustomer()
+
+	t.Run("test create repair for custoemr", func(t *testing.T) {
+		server := NewCustomerManagerServer(
+			fiber.New(),
+			&StubCustomerRepository{customers: []database.Customer{customer}},
+			&StubPurchaseRepository{},
+			&StubRepairRepository{},
+		)
+		req := makeRequest(t,
+			http.MethodPost,
+			fmt.Sprintf("/api/customers/%s/repairs", customer.ID),
+			bytes.NewBuffer([]byte(`{
+				"description": "repair I",
+        "cost": 1.50,
+        "reported_at": "2021-01-01"
+			}`)),
+		)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		var createdRepair map[string]any
+		err := json.NewDecoder(resp.Body).Decode(&createdRepair)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{"cost": 1.5, "created_at": "0001-01-01T00:00:00Z", "customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f", "description": "repair I", "id": "", "reported_at": "2021-01-01T00:00:00Z"}, createdRepair)
+	})
+
 	t.Run("test list repairs for a customer", func(t *testing.T) {
 		server := NewCustomerManagerServer(
 			fiber.New(),
@@ -950,6 +977,7 @@ func TestRepairHandler(t *testing.T) {
 				Description: "To be repaired",
 				Cost:        12.65,
 				CreatedAt:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+				ReportedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		)
 		assert.NoError(t, err)
@@ -960,6 +988,7 @@ func TestRepairHandler(t *testing.T) {
 				Description: "To be repaired II",
 				Cost:        2.65,
 				CreatedAt:   time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				ReportedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		)
 
@@ -983,6 +1012,7 @@ func TestRepairHandler(t *testing.T) {
 				{
 					"cost":        12.65,
 					"created_at":  "2022-01-01T00:00:00Z",
+					"reported_at": "2022-01-01T00:00:00Z",
 					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
 					"description": "To be repaired",
 					"id":          "ca1224cb-c993-4d45-8053-73c56aaf2c77",
@@ -990,6 +1020,7 @@ func TestRepairHandler(t *testing.T) {
 				{
 					"cost":        2.65,
 					"created_at":  "2020-01-01T00:00:00Z",
+					"reported_at": "2022-01-01T00:00:00Z",
 					"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
 					"description": "To be repaired II",
 					"id":          "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",

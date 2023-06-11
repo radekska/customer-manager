@@ -420,6 +420,57 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Creates a new repair for a customer by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create-customer-repair"
+                ],
+                "summary": "Create a repair for a customer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Repair details",
+                        "name": "repairDetails",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.CreateRepairRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Repair"
+                        }
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         }
     },
@@ -504,6 +555,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "reported_at": {
+                    "type": "string"
                 }
             }
         },
@@ -553,6 +607,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "purchased_at": {
+                    "description": "TODO - when invalid date specified it returns field is required",
+                    "type": "string"
+                }
+            }
+        },
+        "server.CreateRepairRequest": {
+            "type": "object",
+            "required": [
+                "cost",
+                "description",
+                "reported_at"
+            ],
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "reported_at": {
                     "description": "TODO - when invalid date specified it returns field is required",
                     "type": "string"
                 }

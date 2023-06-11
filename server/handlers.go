@@ -414,3 +414,58 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
 }
+
+// createRepairHandler godoc
+//
+//	@Summary		  Create a repair for a customer
+//	@Description	Creates a new repair for a customer by ID
+//	@Tags			    create-customer-repair
+//	@Accept			  json
+//	@Produce		  json
+//	@Success		  200	{object} database.Repair
+//	@Failure		  404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		  400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			  customerID	path	string	true "Customer ID"
+//	@Param			  repairDetails	body	server.CreateRepairRequest	true "Repair details"
+//	@Router			  /api/customers/{customerID}/repairs [post]
+func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		newRepair := new(CreateRepairRequest)
+		err := ctx.BodyParser(newRepair)
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
+		}
+
+		validator := getValidator(newRepair)
+		if !validator.Validate() {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		}
+
+		customerID := ctx.Params("customerID")
+		_, err = uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, customer := server.customerRepository.GetByID(customerID)
+		if errors.Is(err, &repositories.CustomerNotFoundError{}) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+
+		err, repair := server.repairsRepository.Create(customer, &database.Repair{
+			Description: newRepair.Description,
+			Cost:        newRepair.Cost,
+			ReportedAt:  time.Time(newRepair.ReportedAt),
+		})
+		if err != nil {
+			// TODO: handle error
+			return err
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(repair)
+	}
+}

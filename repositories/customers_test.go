@@ -15,9 +15,11 @@ func TestDBCustomerRepository(t *testing.T) {
 	purchaseRepository := DBPurchaseRepository{db}
 
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
-	purchase := &database.Purchase{FrameModel: "Model1", LensType: "LensType1",
-		LensPower: "LensPower", PD: "CustomPD", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
-	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32}
+	purchase := &database.Purchase{
+		FrameModel: "Model1", LensType: "LensType1",
+		LensPower: "LensPower", PD: "CustomPD", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32, ReportedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 
 	clearRecords(t, db)
 	t.Run("test create customer", func(t *testing.T) {
@@ -164,5 +166,4 @@ func TestDBCustomerRepository(t *testing.T) {
 	t.Run("test edit customer details but not found", func(t *testing.T) {
 		// TODO
 	})
-
 }
