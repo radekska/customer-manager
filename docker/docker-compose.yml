@@ -8,16 +8,20 @@ services:
       - ../.env
     volumes:
       - ../:/home/appuser/app:rw
+    ports:
+      - "9090:8080"
     depends_on:
       database:
         condition: service_healthy
       customer-manager-migrations:
         condition: service_completed_successfully
 
-  customer-manager-ui:
-    image: customer-manager/customer-manager-ui:latest
-    ports:
-      - "3000:3000"
+  # customer-manager-ui:
+  #   build:
+  #     context: ../../customer-manager-ui
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ../../customer-manager-ui:/app
 
   proxy:
     build:
