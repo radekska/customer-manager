@@ -377,6 +377,131 @@
                     }
                 }
             }
+        },
+        "/api/customers/{customerID}/repairs": {
+            "get": {
+                "description": "Returns full list of repairs for a specific customer by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "get-customer-repairs"
+                ],
+                "summary": "Get list of repairs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.Repair"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new repair for a customer by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "create-customer-repair"
+                ],
+                "summary": "Create a repair for a customer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Repair details",
+                        "name": "repairDetails",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/server.CreateRepairRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Repair"
+                        }
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/customers/{customerID}/repairs/{repairID}": {
+            "delete": {
+                "description": "Deletes a repair by ID",
+                "tags": [
+                    "delete-customer-repair"
+                ],
+                "summary": "Delete a repair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Repair ID",
+                        "name": "repairID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -443,6 +568,29 @@
                 }
             }
         },
+        "database.Repair": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reported_at": {
+                    "type": "string"
+                }
+            }
+        },
         "server.CreateCustomerRequest": {
             "type": "object",
             "required": [
@@ -489,6 +637,26 @@
                     "type": "string"
                 },
                 "purchased_at": {
+                    "description": "TODO - when invalid date specified it returns field is required",
+                    "type": "string"
+                }
+            }
+        },
+        "server.CreateRepairRequest": {
+            "type": "object",
+            "required": [
+                "cost",
+                "description",
+                "reported_at"
+            ],
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "reported_at": {
                     "description": "TODO - when invalid date specified it returns field is required",
                     "type": "string"
                 }

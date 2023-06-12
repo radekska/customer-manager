@@ -5,10 +5,28 @@ import (
 	"customer-manager/repositories"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"time"
 )
+
+func genericListHandler[V []database.Purchase | []database.Repair](getAll func(customerID string) (error, V)) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, items := getAll(customerID)
+		if err != nil {
+			return fiber.ErrInternalServerError
+		}
+		return ctx.Status(fiber.StatusOK).JSON(items)
+	}
+}
 
 // getCustomersHandler godoc
 //
@@ -200,20 +218,7 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Param			customerID	path	string	true "Customer ID"
 //	@Router			/api/customers/{customerID}/purchases [get]
 func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
-	return func(ctx *fiber.Ctx) error {
-		customerID := ctx.Params("customerID")
-		_, err := uuid.Parse(customerID)
-		if err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
-			})
-		}
-		err, purchases := server.purchasesRepository.GetAll(customerID)
-		if err != nil {
-			return fiber.ErrInternalServerError
-		}
-		return ctx.Status(fiber.StatusOK).JSON(purchases)
-	}
+	return genericListHandler[[]database.Purchase](server.purchasesRepository.GetAll)
 }
 
 // createPurchaseHandler godoc
@@ -394,5 +399,118 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 		}
 		// TODO during update the "created_at": "0001-01-01T00:00:00Z" is zeroed
 		return ctx.Status(fiber.StatusOK).JSON(purchase)
+	}
+}
+
+// getRepairsHandler godoc
+//
+//	@Summary		Get list of repairs
+//	@Description	Returns full list of repairs for a specific customer by ID
+//	@Tags			get-customer-repairs
+//	@Produce		json
+//	@Success		200	{array} database.Repair
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Router			/api/customers/{customerID}/repairs [get]
+func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
+	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
+}
+
+// createRepairHandler godoc
+//
+//	@Summary		  Create a repair for a customer
+//	@Description	Creates a new repair for a customer by ID
+//	@Tags			    create-customer-repair
+//	@Accept			  json
+//	@Produce		  json
+//	@Success		  200	{object} database.Repair
+//	@Failure		  404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		  400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			  customerID	path	string	true "Customer ID"
+//	@Param			  repairDetails	body	server.CreateRepairRequest	true "Repair details"
+//	@Router			  /api/customers/{customerID}/repairs [post]
+func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		newRepair := new(CreateRepairRequest)
+		err := ctx.BodyParser(newRepair)
+		if err == fiber.ErrUnprocessableEntity {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"errors": err.Error(),
+			})
+		}
+
+		validator := getValidator(newRepair)
+		if !validator.Validate() {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		}
+
+		customerID := ctx.Params("customerID")
+		_, err = uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, customer := server.customerRepository.GetByID(customerID)
+		if errors.Is(err, &repositories.CustomerNotFoundError{}) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
+
+		err, repair := server.repairsRepository.Create(customer, &database.Repair{
+			Description: newRepair.Description,
+			Cost:        newRepair.Cost,
+			ReportedAt:  time.Time(newRepair.ReportedAt),
+		})
+		if err != nil {
+			// TODO: handle error
+			return err
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(repair)
+	}
+}
+
+// deleteRepairByIDHandler godoc
+//
+//	@Summary		Delete a repair
+//	@Description	Deletes a repair by ID
+//	@Tags			delete-customer-repair
+//	@Success		204
+//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path	string	true "Customer ID"
+//	@Param			repairID	path	string	true "Repair ID"
+//	@Router			/api/customers/{customerID}/repairs/{repairID} [delete]
+func deleteRepairByIDHandler(server *CustomerManagerServer) fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		customerID := ctx.Params("customerID")
+		_, err := uuid.Parse(customerID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		repairID := ctx.Params("repairID")
+		_, err = uuid.Parse(repairID)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given repair id '%s' is not a valid UUID", repairID),
+			})
+		}
+
+		if err := server.repairsRepository.DeleteByID(repairID); err != nil {
+			target := &repositories.RepairNotFoundError{}
+			if errors.As(err, &target) {
+				return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"detail": fmt.Sprintf("repair with given id '%s' does not exists", repairID),
+				})
+			}
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"detail": err,
+			})
+		}
+
+		ctx.Status(fiber.StatusNoContent)
+		return nil
 	}
 }

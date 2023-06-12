@@ -41,6 +41,21 @@ definitions:
       updated_at:
         type: string
     type: object
+  database.Repair:
+    properties:
+      cost:
+        type: number
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      reported_at:
+        type: string
+    type: object
   server.CreateCustomerRequest:
     properties:
       first_name:
@@ -76,6 +91,20 @@ definitions:
     - pd
     - purchase_type
     - purchased_at
+    type: object
+  server.CreateRepairRequest:
+    properties:
+      cost:
+        type: number
+      description:
+        type: string
+      reported_at:
+        description: TODO - when invalid date specified it returns field is required
+        type: string
+    required:
+    - cost
+    - description
+    - reported_at
     type: object
   server.EditCustomerDetailsRequest:
     properties:
@@ -364,4 +393,87 @@ paths:
       summary: Update a purchase
       tags:
       - update-customer-purchase
+  /api/customers/{customerID}/repairs:
+    get:
+      description: Returns full list of repairs for a specific customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Repair'
+            type: array
+      summary: Get list of repairs
+      tags:
+      - get-customer-repairs
+    post:
+      consumes:
+      - application/json
+      description: Creates a new repair for a customer by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Repair details
+        in: body
+        name: repairDetails
+        required: true
+        schema:
+          $ref: '#/definitions/server.CreateRepairRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Repair'
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Create a repair for a customer
+      tags:
+      - create-customer-repair
+  /api/customers/{customerID}/repairs/{repairID}:
+    delete:
+      description: Deletes a repair by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Repair ID
+        in: path
+        name: repairID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Delete a repair
+      tags:
+      - delete-customer-repair
 swagger: "2.0"

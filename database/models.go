@@ -1,9 +1,10 @@
 package database
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Customer struct {
@@ -41,12 +42,12 @@ func (p *Purchase) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type Repair struct {
-	ID          string `gorm:"primaryKey"`
-	Description string
-	Cost        float64 `gorm:"precision:2"`
-	CustomerID  string  `gorm:"size:256"`
-	Customer    Customer
-	CreatedAt   time.Time
+	ID          string    `gorm:"primaryKey"  json:"id"`
+	Description string    `                   json:"description"`
+	Cost        float64   `gorm:"precision:2" json:"cost"`
+	CustomerID  string    `gorm:"size:256"    json:"customer_id"`
+	CreatedAt   time.Time `                   json:"created_at"`
+	ReportedAt  time.Time `gorm:"type:date"   json:"reported_at"`
 }
 
 func (r *Repair) BeforeCreate(tx *gorm.DB) (err error) {
