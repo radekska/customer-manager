@@ -472,6 +472,48 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/customers/{customerID}/repairs/{repairID}": {
+            "delete": {
+                "description": "Deletes a repair by ID",
+                "tags": [
+                    "delete-customer-repair"
+                ],
+                "summary": "Delete a repair",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "customerID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Repair ID",
+                        "name": "repairID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "IMPLEMENTED BUT DOCS TODO",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

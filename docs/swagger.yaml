@@ -448,4 +448,32 @@ paths:
       summary: Create a repair for a customer
       tags:
       - create-customer-repair
+  /api/customers/{customerID}/repairs/{repairID}:
+    delete:
+      description: Deletes a repair by ID
+      parameters:
+      - description: Customer ID
+        in: path
+        name: customerID
+        required: true
+        type: string
+      - description: Repair ID
+        in: path
+        name: repairID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+        "404":
+          description: IMPLEMENTED BUT DOCS TODO
+          schema:
+            type: string
+      summary: Delete a repair
+      tags:
+      - delete-customer-repair
 swagger: "2.0"
