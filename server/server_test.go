@@ -1029,4 +1029,42 @@ func TestRepairHandler(t *testing.T) {
 			actualRepairs,
 		)
 	})
+
+	t.Run("test delete repair for customer", func(t *testing.T) {
+		server := NewCustomerManagerServer(
+			fiber.New(),
+			&StubCustomerRepository{customers: []database.Customer{customer}},
+			&StubPurchaseRepository{},
+			&StubRepairRepository{},
+		)
+		repairOne := &database.Repair{
+			ID:          "ca1224cb-c993-4d45-8053-73c56aaf2c77",
+			Description: "To be repaired",
+			Cost:        12.65,
+			CreatedAt:   time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+			ReportedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+		repairTwo := &database.Repair{
+			ID:          "5b521e40-e0f1-47fd-a832-fe6ea3fba22c",
+			Description: "To be repaired II",
+			Cost:        2.65,
+			CreatedAt:   time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			ReportedAt:  time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+
+		err, _ := server.repairsRepository.Create(&customer, repairOne)
+		assert.NoError(t, err)
+		err, _ = server.repairsRepository.Create(&customer, repairTwo)
+		assert.NoError(t, err)
+
+		req := makeRequest(t, http.MethodDelete, fmt.Sprintf("/api/customers/%s/repairs/%s", customer.ID, repairOne.ID), nil)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+		err, currentRepairs := server.repairsRepository.GetAll(customer.ID)
+		assert.NoError(t, err)
+		assert.Len(t, currentRepairs, 1)
+		assert.Equal(t, []database.Repair{*repairTwo}, currentRepairs)
+	})
 }

@@ -62,6 +62,7 @@ func NewCustomerManagerServer(
 	repairsPath := customersPath + "/:customerID" + "/repairs"
 	server.App.Get(repairsPath, getRepairsHandler(server))
 	server.App.Post(repairsPath, createRepairHandler(server))
+	server.App.Delete(repairsPath+"/:repairID", deleteRepairByIDHandler(server))
 
 	return server
 }
