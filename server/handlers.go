@@ -1,10 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"customer-manager/database"
 	"customer-manager/repositories"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -415,6 +418,13 @@ func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
 }
 
+func convertToHttpRequest(ctx *fiber.Ctx) *http.Request {
+	bodyBuffer := ioutil.NopCloser(bytes.NewReader(ctx.Body()))
+	httpReq := &http.Request{Body: bodyBuffer, Method: ctx.Method()}
+	httpReq.Header = map[string][]string{"Content-Type": {ctx.Get("Content-Type")}}
+	return httpReq
+}
+
 // createRepairHandler godoc
 //
 //	@Summary		  Create a repair for a customer
@@ -429,44 +439,45 @@ func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Param			  repairDetails	body	server.CreateRepairRequest	true "Repair details"
 //	@Router			  /api/customers/{customerID}/repairs [post]
 func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
+	registerValidators()
 	return func(ctx *fiber.Ctx) error {
-		newRepair := new(CreateRepairRequest)
-		err := ctx.BodyParser(newRepair)
-		if err == fiber.ErrUnprocessableEntity {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"errors": err.Error(),
-			})
-		}
-
-		validator := getValidator(newRepair)
-		if !validator.Validate() {
-			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
-		}
-
-		customerID := ctx.Params("customerID")
-		_, err = uuid.Parse(customerID)
-		if err != nil {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
-			})
-		}
-		err, customer := server.customerRepository.GetByID(customerID)
-		if errors.Is(err, &repositories.CustomerNotFoundError{}) {
-			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
-			})
-		}
-
-		err, repair := server.repairsRepository.Create(customer, &database.Repair{
-			Description: newRepair.Description,
-			Cost:        newRepair.Cost,
-			ReportedAt:  time.Time(newRepair.ReportedAt),
-		})
-		if err != nil {
-			// TODO: handle error
+		r := new(CreateRepairRequest)
+		if err := ctx.BodyParser(r); err != nil {
 			return err
 		}
-		return ctx.Status(fiber.StatusCreated).JSON(repair)
+
+		validationErrors := validateRequest(r)
+		fmt.Println(validationErrors)
+		if validationErrors != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validationErrors)
+		}
+
+		// VALIDATION
+
+		// 	customerID := ctx.Params("customerID")
+		// 	_, err = uuid.Parse(customerID)
+		// 	if err != nil {
+		// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		// 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+		// 		})
+		// 	}
+		// 	err, customer := server.customerRepository.GetByID(customerID)
+		// 	if errors.Is(err, &repositories.CustomerNotFoundError{}) {
+		// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		// 			"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+		// 		})
+		// 	}
+
+		// 	err, repair := server.repairsRepository.Create(customer, &database.Repair{
+		// 		Description: createRepiar.Description,
+		// 		Cost:        createRepiar.Cost,
+		// 		ReportedAt:  createRepiar.ReportedAt,
+		// 	})
+		// 	if err != nil {
+		// 		// TODO: handle error
+		// 		return err
+		// 	}
+		return ctx.Status(fiber.StatusCreated).JSON("done")
 	}
 }
 
