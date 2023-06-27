@@ -2,17 +2,19 @@ package server
 
 import (
 	_ "customer-manager/docs"
+	"customer-manager/repositories"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/swagger"
 )
-import "customer-manager/repositories"
 
 type CustomerManagerServer struct {
 	App                 *fiber.App
 	customerRepository  repositories.CustomerRepository
 	purchasesRepository repositories.PurchaseRepository
+	repairsRepository   repositories.RepairRepository
 }
 
 func mountMiddlewares(server *CustomerManagerServer) {
@@ -31,11 +33,13 @@ func NewCustomerManagerServer(
 	app *fiber.App,
 	customerRepository repositories.CustomerRepository,
 	purchasesRepository repositories.PurchaseRepository,
+	repairsRepository repositories.RepairRepository,
 ) *CustomerManagerServer {
 	server := &CustomerManagerServer{
 		App:                 app,
 		customerRepository:  customerRepository,
 		purchasesRepository: purchasesRepository,
+		repairsRepository:   repairsRepository,
 	}
 
 	mountMiddlewares(server)
@@ -54,6 +58,11 @@ func NewCustomerManagerServer(
 	server.App.Post(purchasesPath, createPurchaseHandler(server))
 	server.App.Delete(purchasesPath+"/:purchaseID", deletePurchaseByIDHandler(server))
 	server.App.Put(purchasesPath+"/:purchaseID", editPurchaseByIDHandler(server))
+
+	repairsPath := customersPath + "/:customerID" + "/repairs"
+	server.App.Get(repairsPath, getRepairsHandler(server))
+	server.App.Post(repairsPath, createRepairHandler(server))
+	server.App.Delete(repairsPath+"/:repairID", deleteRepairByIDHandler(server))
 
 	return server
 }

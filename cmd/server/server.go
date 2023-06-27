@@ -26,6 +26,7 @@ func main() {
 		app,
 		&repositories.DBCustomerRepository{DB: db},
 		&repositories.DBPurchaseRepository{DB: db},
+		&repositories.DBRepairRepository{DB: db},
 	)
 
 	panic(customerManagerServer.App.Listen(getServerPort()))

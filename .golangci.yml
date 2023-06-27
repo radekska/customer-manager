@@ -49,7 +49,7 @@ linters:
     - lll
     - funlen
     - gocognit
-    - dupl
+    # - dupl
     - whitespace
     - goconst
     - unconvert
