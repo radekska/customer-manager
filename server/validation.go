@@ -44,13 +44,6 @@ type CreatePurchaseRequest struct {
 
 type EditPurchaseRequest = CreatePurchaseRequest
 
-type CreateRepairRequest struct {
-	Description string  `json:"description" validate:"required"`
-	Cost        float64 `json:"cost" validate:"required"`
-	// TODO - when invalid date specified it returns field is required
-	ReportedAt Date `json:"reported_at"  validate:"required"`
-}
-
 func getValidator(s interface{}) *validate.Validation {
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false
