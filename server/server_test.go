@@ -949,7 +949,7 @@ func TestRepairHandler(t *testing.T) {
 			fmt.Sprintf("/api/customers/%s/repairs", customer.ID),
 			bytes.NewBuffer([]byte(`{
 				"description": "repair I",
-        "cost": 1.50,
+        "cost": "1.50",
         "reported_at": "2021-01-01"
 			}`)),
 		)

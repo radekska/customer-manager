@@ -429,42 +429,39 @@ func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Param			  repairDetails	body	server.CreateRepairRequest	true "Repair details"
 //	@Router			  /api/customers/{customerID}/repairs [post]
 func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
+	registerValidators()
 	return func(ctx *fiber.Ctx) error {
-		newRepair := new(CreateRepairRequest)
-		err := ctx.BodyParser(newRepair)
-		if err == fiber.ErrUnprocessableEntity {
-			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"errors": err.Error(),
-			})
+		req := new(CreateRepairRequest)
+		if err := ctx.BodyParser(req); err != nil {
+			return err
 		}
 
-		validator := getValidator(newRepair)
-		if !validator.Validate() {
-			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
+		if validationErrors := validateRequest(req); validationErrors != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(validationErrors)
 		}
 
 		customerID := ctx.Params("customerID")
-		_, err = uuid.Parse(customerID)
-		if err != nil {
+		if _, err := uuid.Parse(customerID); err != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
 			})
 		}
 		err, customer := server.customerRepository.GetByID(customerID)
-		if errors.Is(err, &repositories.CustomerNotFoundError{}) {
+		if _, isErr := err.(*repositories.CustomerNotFoundError); isErr {
 			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
 			})
 		}
 
 		err, repair := server.repairsRepository.Create(customer, &database.Repair{
-			Description: newRepair.Description,
-			Cost:        newRepair.Cost,
-			ReportedAt:  time.Time(newRepair.ReportedAt),
+			Description: req.Description,
+			Cost:        convertToFloat(req.Cost),
+			ReportedAt:  convertToTime(req.ReportedAt),
 		})
 		if err != nil {
-			// TODO: handle error
-			return err
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err,
+			})
 		}
 		return ctx.Status(fiber.StatusCreated).JSON(repair)
 	}

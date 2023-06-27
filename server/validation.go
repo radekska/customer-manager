@@ -1,9 +1,11 @@
 package server
 
 import (
+	"reflect"
 	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gookit/validate"
 )
 
@@ -42,13 +44,6 @@ type CreatePurchaseRequest struct {
 
 type EditPurchaseRequest = CreatePurchaseRequest
 
-type CreateRepairRequest struct {
-	Description string  `json:"description" validate:"required"`
-	Cost        float64 `json:"cost" validate:"required"`
-	// TODO - when invalid date specified it returns field is required
-	ReportedAt Date `json:"reported_at"  validate:"required"`
-}
-
 func getValidator(s interface{}) *validate.Validation {
 	validate.Config(func(opt *validate.GlobalOption) {
 		opt.StopOnError = false
@@ -58,4 +53,37 @@ func getValidator(s interface{}) *validate.Validation {
 		"required": "The '{field}' is required",
 	})
 	return v
+}
+
+var valid *validator.Validate = validator.New()
+
+type CreateRepairRequest struct {
+	Description string `json:"description" validate:"required"`
+	Cost        string `json:"cost" validate:"required"`
+	ReportedAt  string `json:"reported_at"  validate:"required,datetime=2006-01-02"`
+}
+
+func registerValidators() {
+	valid.RegisterTagNameFunc(func(fld reflect.StructField) string {
+		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+		if name == "-" {
+			return ""
+		}
+		return name
+	})
+	valid.RegisterStructValidation(func(sl validator.StructLevel) {}, CreateRepairRequest{})
+}
+
+func validateRequest(r interface{}) map[string]string {
+	err := valid.Struct(r)
+	if err == nil {
+		return nil
+	}
+
+	validationErrors := make(map[string]string)
+
+	for _, err := range err.(validator.ValidationErrors) {
+		validationErrors[err.Field()] = err.Error()
+	}
+	return validationErrors
 }
