@@ -1,13 +1,10 @@
 package server
 
 import (
-	"bytes"
 	"customer-manager/database"
 	"customer-manager/repositories"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -418,13 +415,6 @@ func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
 }
 
-func convertToHttpRequest(ctx *fiber.Ctx) *http.Request {
-	bodyBuffer := ioutil.NopCloser(bytes.NewReader(ctx.Body()))
-	httpReq := &http.Request{Body: bodyBuffer, Method: ctx.Method()}
-	httpReq.Header = map[string][]string{"Content-Type": {ctx.Get("Content-Type")}}
-	return httpReq
-}
-
 // createRepairHandler godoc
 //
 //	@Summary		  Create a repair for a customer
@@ -441,43 +431,39 @@ func convertToHttpRequest(ctx *fiber.Ctx) *http.Request {
 func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
 	registerValidators()
 	return func(ctx *fiber.Ctx) error {
-		r := new(CreateRepairRequest)
-		if err := ctx.BodyParser(r); err != nil {
+		req := new(CreateRepairRequest)
+		if err := ctx.BodyParser(req); err != nil {
 			return err
 		}
 
-		validationErrors := validateRequest(r)
-		fmt.Println(validationErrors)
-		if validationErrors != nil {
+		if validationErrors := validateRequest(req); validationErrors != nil {
 			return ctx.Status(fiber.StatusBadRequest).JSON(validationErrors)
 		}
 
-		// VALIDATION
+		customerID := ctx.Params("customerID")
+		if _, err := uuid.Parse(customerID); err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
+			})
+		}
+		err, customer := server.customerRepository.GetByID(customerID)
+		if _, isErr := err.(*repositories.CustomerNotFoundError); isErr {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
+			})
+		}
 
-		// 	customerID := ctx.Params("customerID")
-		// 	_, err = uuid.Parse(customerID)
-		// 	if err != nil {
-		// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-		// 			"detail": fmt.Sprintf("given customer id '%s' is not a valid UUID", customerID),
-		// 		})
-		// 	}
-		// 	err, customer := server.customerRepository.GetByID(customerID)
-		// 	if errors.Is(err, &repositories.CustomerNotFoundError{}) {
-		// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-		// 			"detail": fmt.Sprintf("customer with given id '%s' does not exists", customerID),
-		// 		})
-		// 	}
-
-		// 	err, repair := server.repairsRepository.Create(customer, &database.Repair{
-		// 		Description: createRepiar.Description,
-		// 		Cost:        createRepiar.Cost,
-		// 		ReportedAt:  createRepiar.ReportedAt,
-		// 	})
-		// 	if err != nil {
-		// 		// TODO: handle error
-		// 		return err
-		// 	}
-		return ctx.Status(fiber.StatusCreated).JSON("done")
+		err, repair := server.repairsRepository.Create(customer, &database.Repair{
+			Description: req.Description,
+			Cost:        convertToFloat(req.Cost),
+			ReportedAt:  convertToTime(req.ReportedAt),
+		})
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err,
+			})
+		}
+		return ctx.Status(fiber.StatusCreated).JSON(repair)
 	}
 }
 
