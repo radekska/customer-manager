@@ -3,7 +3,7 @@ http:
     customer-manager:
       loadBalancer:
         servers:
-        - url: "http://customer-manager-api.internal:9000"
+        - url: "http://customer-manager-api.internal:8080"
     customer-manager-ui:
       loadBalancer:
         servers:
