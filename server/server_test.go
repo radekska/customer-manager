@@ -43,8 +43,14 @@ func (s *StubCustomerRepository) DeleteByID(customerID string) error {
 func (s *StubCustomerRepository) ListBy(
 	firstName string,
 	lastName string,
+	limit int,
+	offset int,
 ) (error, []database.Customer) {
-	return nil, s.customers
+	if limit > len(s.customers) {
+		return nil, s.customers
+	}
+	customers := s.customers[offset : offset+limit]
+	return nil, customers
 }
 
 func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
@@ -295,6 +301,55 @@ func TestCustomerHandlers(t *testing.T) {
 		}, actualCustomers)
 	})
 
+	t.Run("test get paginated customers", func(t *testing.T) {
+		server.customerRepository = &StubCustomerRepository{customers: []database.Customer{
+			{
+				ID:              "7dd4ace2-d792-4532-bda2-c986a9a04363",
+				FirstName:       "Jane",
+				LastName:        "Doe",
+				TelephoneNumber: "123567848",
+			},
+			{
+				ID:              "8a5cae65-222c-4164-a08b-9983af7e366c",
+				FirstName:       "Bob",
+				LastName:        "Toe",
+				TelephoneNumber: "367654567",
+			},
+			{
+				ID:              "325cae65-222c-4164-a08b-9983af7e366c",
+				FirstName:       "Joe",
+				LastName:        "Doe",
+				TelephoneNumber: "567231123",
+			},
+		}}
+		req := makeRequest(t, http.MethodGet, "/api/customers?limit=2&offset=1", nil)
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+		var actualCustomers []map[string]string
+		err := json.NewDecoder(resp.Body).Decode(&actualCustomers)
+		assert.NoError(t, err)
+		assert.Equal(t, []map[string]string{
+			{
+				"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
+				"first_name":       "Bob",
+				"last_name":        "Toe",
+				"telephone_number": "367654567",
+				"created_at":       "0001-01-01T00:00:00Z",
+				"updated_at":       "0001-01-01T00:00:00Z",
+			},
+			{
+				"id":               "325cae65-222c-4164-a08b-9983af7e366c",
+				"first_name":       "Joe",
+				"last_name":        "Doe",
+				"telephone_number": "567231123",
+				"created_at":       "0001-01-01T00:00:00Z",
+				"updated_at":       "0001-01-01T00:00:00Z",
+			},
+		}, actualCustomers)
+	})
+
 	t.Run("test get no customers as empty repository", func(t *testing.T) {
 		var expectedCustomers []database.Customer
 		server.customerRepository = &StubCustomerRepository{customers: expectedCustomers}
@@ -324,7 +379,7 @@ func TestCustomerHandlers(t *testing.T) {
 			"created_at":       "0001-01-01T00:00:00Z",
 			"updated_at":       "0001-01-01T00:00:00Z",
 		})
-		_, currentCustomers := server.customerRepository.ListBy("", "")
+		_, currentCustomers := server.customerRepository.ListBy("", "", 10, 0)
 		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
 	})
@@ -353,7 +408,7 @@ func TestCustomerHandlers(t *testing.T) {
 			},
 			actualErrorMessage,
 		)
-		_, currentCustomers := server.customerRepository.ListBy("", "")
+		_, currentCustomers := server.customerRepository.ListBy("", "", 10, 0)
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
 	})
 
@@ -615,7 +670,7 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
-		err, customers := server.customerRepository.ListBy("", "")
+		err, customers := server.customerRepository.ListBy("", "", 10, 0)
 		assert.NoError(t, err)
 		assert.Equal(t, []database.Customer{customerTwo}, customers)
 		assert.Equal(t, "", resp.Header.Get("Content-Type"))
@@ -960,7 +1015,18 @@ func TestRepairHandler(t *testing.T) {
 		var createdRepair map[string]any
 		err := json.NewDecoder(resp.Body).Decode(&createdRepair)
 		assert.NoError(t, err)
-		assert.Equal(t, map[string]any{"cost": 1.5, "created_at": "0001-01-01T00:00:00Z", "customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f", "description": "repair I", "id": "", "reported_at": "2021-01-01T00:00:00Z"}, createdRepair)
+		assert.Equal(
+			t,
+			map[string]any{
+				"cost":        1.5,
+				"created_at":  "0001-01-01T00:00:00Z",
+				"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+				"description": "repair I",
+				"id":          "",
+				"reported_at": "2021-01-01T00:00:00Z",
+			},
+			createdRepair,
+		)
 	})
 
 	t.Run("test list repairs for a customer", func(t *testing.T) {
@@ -1057,7 +1123,12 @@ func TestRepairHandler(t *testing.T) {
 		err, _ = server.repairsRepository.Create(&customer, repairTwo)
 		assert.NoError(t, err)
 
-		req := makeRequest(t, http.MethodDelete, fmt.Sprintf("/api/customers/%s/repairs/%s", customer.ID, repairOne.ID), nil)
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/%s/repairs/%s", customer.ID, repairOne.ID),
+			nil,
+		)
 
 		resp := getResponse(t, server, req)
 

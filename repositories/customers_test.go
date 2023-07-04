@@ -19,7 +19,11 @@ func TestDBCustomerRepository(t *testing.T) {
 		FrameModel: "Model1", LensType: "LensType1",
 		LensPower: "LensPower", PD: "CustomPD", PurchasedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 	}
-	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32, ReportedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
+	repair := &database.Repair{
+		Description: "some issue with the thing",
+		Cost:        12.32,
+		ReportedAt:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
 
 	clearRecords(t, db)
 	t.Run("test create customer", func(t *testing.T) {
@@ -91,7 +95,7 @@ func TestDBCustomerRepository(t *testing.T) {
 			customers = append(customers, *customer)
 		}
 
-		err, dbCustomers := customerRepository.ListBy("", "Do")
+		err, dbCustomers := customerRepository.ListBy("", "Do", 10, 0)
 
 		assert.NoError(t, err)
 		assertCustomer(t, &customers[0], &dbCustomers[0])
@@ -100,9 +104,37 @@ func TestDBCustomerRepository(t *testing.T) {
 
 		clearRecords(t, db)
 	})
+	t.Run("test get paginated customers", func(t *testing.T) {
+		var customers []database.Customer
+		customersData := []database.Customer{
+			{FirstName: "Alice", LastName: "Doe", TelephoneNumber: "123"},
+			{FirstName: "Bob", LastName: "Doe", TelephoneNumber: "321"},
+			{FirstName: "Xin", LastName: "Smith", TelephoneNumber: "893"},
+		}
+		for _, customerData := range customersData {
+			err, customer := customerRepository.Create(
+				&database.Customer{
+					ID:              "customerID",
+					FirstName:       customerData.FirstName,
+					LastName:        customerData.LastName,
+					TelephoneNumber: customerData.TelephoneNumber,
+				},
+			)
+			assert.NoError(t, err)
+			customers = append(customers, *customer)
+		}
+
+		err, dbCustomers := customerRepository.ListBy("", "", 1, 2)
+
+		assert.NoError(t, err)
+		assertCustomer(t, &customers[2], &dbCustomers[0])
+		assert.Len(t, dbCustomers, 1)
+
+		clearRecords(t, db)
+	})
 
 	t.Run("test get all customers when no records ", func(t *testing.T) {
-		err, dbCustomers := customerRepository.ListBy("", "")
+		err, dbCustomers := customerRepository.ListBy("", "", 10, 0)
 
 		assert.NoError(t, err)
 		assert.Len(t, dbCustomers, 0)

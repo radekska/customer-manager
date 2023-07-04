@@ -12,7 +12,11 @@ func TestDBRepairRepository(t *testing.T) {
 	customerRepository := DBCustomerRepository{db}
 	repairRepository := DBRepairRepository{db}
 	customer := &database.Customer{FirstName: "John", LastName: "Doe", TelephoneNumber: "123456789"}
-	repair := &database.Repair{Description: "some issue with the thing", Cost: 12.32, ReportedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
+	repair := &database.Repair{
+		Description: "some issue with the thing",
+		Cost:        12.32,
+		ReportedAt:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
 
 	t.Run("test add repair to a customer", func(t *testing.T) {
 		err, dbCustomer := customerRepository.Create(customer)

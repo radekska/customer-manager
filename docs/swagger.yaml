@@ -95,11 +95,10 @@ definitions:
   server.CreateRepairRequest:
     properties:
       cost:
-        type: number
+        type: string
       description:
         type: string
       reported_at:
-        description: TODO - when invalid date specified it returns field is required
         type: string
     required:
     - cost
@@ -157,6 +156,16 @@ paths:
         in: query
         name: lastName
         type: string
+      - default: 10
+        description: list length
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: list offset
+        in: query
+        name: offset
+        type: integer
       produces:
       - application/json
       responses:
