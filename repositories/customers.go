@@ -48,12 +48,13 @@ func (d *DBCustomerRepository) ListBy(
 	firstName := strings.ToLower(customerFirstName)
 	lastName := strings.ToLower(customerLastName)
 	if firstName == "" && lastName == "" {
-		result = d.DB.Find(&customers)
+		result = d.DB.Offset(offset).Limit(limit).Order("first_name asc").Find(&customers)
 	} else {
 		firstNameQuery := fmt.Sprintf("%%%s%%", firstName)
 		lastNameQuery := fmt.Sprintf("%%%s%%", lastName)
+
 		result = d.DB.Where("LOWER(first_name) LIKE ? AND LOWER(last_name) LIKE ?",
-			firstNameQuery, lastNameQuery).Order("first_name asc").Find(&customers)
+			firstNameQuery, lastNameQuery).Offset(offset).Limit(limit).Order("first_name asc").Find(&customers)
 	}
 
 	return result.Error, customers
