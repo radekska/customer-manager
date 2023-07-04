@@ -38,6 +38,20 @@ const docTemplate = `{
                         "description": "last name search",
                         "name": "lastName",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "list length",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "list offset",
+                        "name": "offset",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -663,13 +677,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "cost": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "reported_at": {
-                    "description": "TODO - when invalid date specified it returns field is required",
                     "type": "string"
                 }
             }

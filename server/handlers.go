@@ -11,7 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func genericListHandler[V []database.Purchase | []database.Repair](getAll func(customerID string) (error, V)) fiber.Handler {
+func genericListHandler[V []database.Purchase | []database.Repair](
+	getAll func(customerID string) (error, V),
+) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		customerID := ctx.Params("customerID")
 		_, err := uuid.Parse(customerID)
@@ -34,15 +36,19 @@ func genericListHandler[V []database.Purchase | []database.Repair](getAll func(c
 //	@Description	Returns full list of existing customers
 //	@Tags			list-customers
 //	@Produce		json
-//	@Success		200	{array} database.Customer
-//	@Param        	firstName    query     string  false  "first name search"
-//	@Param        	lastName    query     string  false  "last name search"
+//	@Success		200			{array}	database.Customer
+//	@Param			firstName	query	string	false	"first name search"
+//	@Param			lastName	query	string	false	"last name search"
+//	@Param			limit		query	int		false	"list length"	default(10)
+//	@Param			offset		query	int		false	"list offset"	default(0)
 //	@Router			/api/customers [get]
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		firstName := ctx.Query("firstName")
 		lastName := ctx.Query("lastName")
-		err, customers := server.customerRepository.ListBy(firstName, lastName)
+		limit := ctx.QueryInt("limit", 10)
+		offset := ctx.QueryInt("offset", 0)
+		err, customers := server.customerRepository.ListBy(firstName, lastName, limit, offset)
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
@@ -57,9 +63,9 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Tags			create-customer
 //	@Accept			json
 //	@Produce		json
-//	@Success		201	{object} database.Customer
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerDetails	body	server.CreateCustomerRequest	true "Customer details"
+//	@Success		201				{object}	database.Customer
+//	@Failure		400				{string}	string							"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerDetails	body		server.CreateCustomerRequest	true	"Customer details"
 //	@Router			/api/customers [post]
 func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -97,10 +103,10 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Returns customer details by ID
 //	@Tags			get-customer
 //	@Produce		json
-//	@Success		200	{object} database.Customer
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
+//	@Success		200			{object}	database.Customer
+//	@Failure		400			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path		string	true	"Customer ID"
 //	@Router			/api/customers/{customerID} [get]
 func getCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -127,11 +133,11 @@ func getCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Edit customer details by ID
 //	@Tags			edit-customer
 //	@Produce		json
-//	@Success		200	{object} database.Customer
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
-//	@Param			customerDetails	body	server.EditCustomerDetailsRequest	true "New customer details"
+//	@Success		200				{object}	database.Customer
+//	@Failure		400				{string}	string								"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404				{string}	string								"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID		path		string								true	"Customer ID"
+//	@Param			customerDetails	body		server.EditCustomerDetailsRequest	true	"New customer details"
 //	@Router			/api/customers/{customerID} [put]
 func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -179,9 +185,9 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Delete customer details and it's relations by ID
 //	@Tags			delete-customer
 //	@Success		204
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
+//	@Failure		400			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		404			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path		string	true	"Customer ID"
 //	@Router			/api/customers/{customerID} [delete]
 func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -214,8 +220,8 @@ func deleteCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Returns full list of purchases for a specific customer by ID
 //	@Tags			get-customer-purchases
 //	@Produce		json
-//	@Success		200	{array} database.Purchase
-//	@Param			customerID	path	string	true "Customer ID"
+//	@Success		200			{array}	database.Purchase
+//	@Param			customerID	path	string	true	"Customer ID"
 //	@Router			/api/customers/{customerID}/purchases [get]
 func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
 	return genericListHandler[[]database.Purchase](server.purchasesRepository.GetAll)
@@ -228,11 +234,11 @@ func getPurchasesHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Tags			create-customer-purchase
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object} database.Purchase
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
-//	@Param			purchaseDetails	body	server.CreatePurchaseRequest	true "Purchase details"
+//	@Success		200				{object}	database.Purchase
+//	@Failure		404				{string}	string							"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400				{string}	string							"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID		path		string							true	"Customer ID"
+//	@Param			purchaseDetails	body		server.CreatePurchaseRequest	true	"Purchase details"
 //	@Router			/api/customers/{customerID}/purchases [post]
 func createPurchaseHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -285,10 +291,10 @@ func createPurchaseHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Deletes a purchase by ID
 //	@Tags			delete-customer-purchase
 //	@Success		204
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
-//	@Param			purchaseID	path	string	true "Purchase ID"
+//	@Failure		404			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path		string	true	"Customer ID"
+//	@Param			purchaseID	path		string	true	"Purchase ID"
 //	@Router			/api/customers/{customerID}/purchases/{purchaseID} [delete]
 func deletePurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -329,12 +335,12 @@ func deletePurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Summary		Update a purchase
 //	@Description	Updates a purchase for a customer by ID
 //	@Tags			update-customer-purchase
-//	@Success		200	{object} database.Purchase
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
-//	@Param			purchaseID	path	string	true "Purchase ID"
-//	@Param			customerDetails	body	server.EditPurchaseRequest	true "New purchase details"
+//	@Success		200				{object}	database.Purchase
+//	@Failure		404				{string}	string						"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400				{string}	string						"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID		path		string						true	"Customer ID"
+//	@Param			purchaseID		path		string						true	"Purchase ID"
+//	@Param			customerDetails	body		server.EditPurchaseRequest	true	"New purchase details"
 //	@Router			/api/customers/{customerID}/purchases/{purchaseID} [put]
 func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -408,8 +414,8 @@ func editPurchaseByIDHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Returns full list of repairs for a specific customer by ID
 //	@Tags			get-customer-repairs
 //	@Produce		json
-//	@Success		200	{array} database.Repair
-//	@Param			customerID	path	string	true "Customer ID"
+//	@Success		200			{array}	database.Repair
+//	@Param			customerID	path	string	true	"Customer ID"
 //	@Router			/api/customers/{customerID}/repairs [get]
 func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 	return genericListHandler[[]database.Repair](server.repairsRepository.GetAll)
@@ -417,17 +423,17 @@ func getRepairsHandler(server *CustomerManagerServer) fiber.Handler {
 
 // createRepairHandler godoc
 //
-//	@Summary		  Create a repair for a customer
+//	@Summary		Create a repair for a customer
 //	@Description	Creates a new repair for a customer by ID
-//	@Tags			    create-customer-repair
-//	@Accept			  json
-//	@Produce		  json
-//	@Success		  200	{object} database.Repair
-//	@Failure		  404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		  400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			  customerID	path	string	true "Customer ID"
-//	@Param			  repairDetails	body	server.CreateRepairRequest	true "Repair details"
-//	@Router			  /api/customers/{customerID}/repairs [post]
+//	@Tags			create-customer-repair
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{object}	database.Repair
+//	@Failure		404				{string}	string						"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400				{string}	string						"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID		path		string						true	"Customer ID"
+//	@Param			repairDetails	body		server.CreateRepairRequest	true	"Repair details"
+//	@Router			/api/customers/{customerID}/repairs [post]
 func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
 	registerValidators()
 	return func(ctx *fiber.Ctx) error {
@@ -473,10 +479,10 @@ func createRepairHandler(server *CustomerManagerServer) fiber.Handler {
 //	@Description	Deletes a repair by ID
 //	@Tags			delete-customer-repair
 //	@Success		204
-//	@Failure		404	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Failure		400	{string} string "IMPLEMENTED BUT DOCS TODO"
-//	@Param			customerID	path	string	true "Customer ID"
-//	@Param			repairID	path	string	true "Repair ID"
+//	@Failure		404			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Failure		400			{string}	string	"IMPLEMENTED BUT DOCS TODO"
+//	@Param			customerID	path		string	true	"Customer ID"
+//	@Param			repairID	path		string	true	"Repair ID"
 //	@Router			/api/customers/{customerID}/repairs/{repairID} [delete]
 func deleteRepairByIDHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {

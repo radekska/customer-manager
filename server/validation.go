@@ -59,8 +59,8 @@ var valid *validator.Validate = validator.New()
 
 type CreateRepairRequest struct {
 	Description string `json:"description" validate:"required"`
-	Cost        string `json:"cost" validate:"required"`
-	ReportedAt  string `json:"reported_at"  validate:"required,datetime=2006-01-02"`
+	Cost        string `json:"cost"        validate:"required"`
+	ReportedAt  string `json:"reported_at" validate:"required,datetime=2006-01-02"`
 }
 
 func registerValidators() {

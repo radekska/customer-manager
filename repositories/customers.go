@@ -37,7 +37,12 @@ func (d *DBCustomerRepository) DeleteByID(customerID string) error {
 	return nil
 }
 
-func (d *DBCustomerRepository) ListBy(customerFirstName string, customerLastName string) (error, []database.Customer) {
+func (d *DBCustomerRepository) ListBy(
+	customerFirstName string,
+	customerLastName string,
+	limit int,
+	offset int,
+) (error, []database.Customer) {
 	var customers []database.Customer
 	var result *gorm.DB
 	firstName := strings.ToLower(customerFirstName)

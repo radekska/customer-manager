@@ -19,6 +19,7 @@ static-analysis: ## Run static analysis configured by .golangci.yml
 fixer: ## Adjust line length to 120 and fix static analysis errors
 	@golines -w --max-len=120 server/ repositories/ database/ cmd/
 	@golangci-lint run --config .golangci.yml --fix --out-format=colored-line-number
+	@swag fmt
 
 api-docs: ## Generate API docs
 	swag init

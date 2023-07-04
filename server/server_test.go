@@ -43,8 +43,11 @@ func (s *StubCustomerRepository) DeleteByID(customerID string) error {
 func (s *StubCustomerRepository) ListBy(
 	firstName string,
 	lastName string,
+	limit int,
+	offset int,
 ) (error, []database.Customer) {
-	return nil, s.customers
+	customers := s.customers[offset : offset+limit+1]
+	return nil, customers
 }
 
 func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
@@ -960,7 +963,18 @@ func TestRepairHandler(t *testing.T) {
 		var createdRepair map[string]any
 		err := json.NewDecoder(resp.Body).Decode(&createdRepair)
 		assert.NoError(t, err)
-		assert.Equal(t, map[string]any{"cost": 1.5, "created_at": "0001-01-01T00:00:00Z", "customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f", "description": "repair I", "id": "", "reported_at": "2021-01-01T00:00:00Z"}, createdRepair)
+		assert.Equal(
+			t,
+			map[string]any{
+				"cost":        1.5,
+				"created_at":  "0001-01-01T00:00:00Z",
+				"customer_id": "ec8f6cb1-61f6-4dfc-b970-9dd81ff2547f",
+				"description": "repair I",
+				"id":          "",
+				"reported_at": "2021-01-01T00:00:00Z",
+			},
+			createdRepair,
+		)
 	})
 
 	t.Run("test list repairs for a customer", func(t *testing.T) {
@@ -1057,7 +1071,12 @@ func TestRepairHandler(t *testing.T) {
 		err, _ = server.repairsRepository.Create(&customer, repairTwo)
 		assert.NoError(t, err)
 
-		req := makeRequest(t, http.MethodDelete, fmt.Sprintf("/api/customers/%s/repairs/%s", customer.ID, repairOne.ID), nil)
+		req := makeRequest(
+			t,
+			http.MethodDelete,
+			fmt.Sprintf("/api/customers/%s/repairs/%s", customer.ID, repairOne.ID),
+			nil,
+		)
 
 		resp := getResponse(t, server, req)
 
