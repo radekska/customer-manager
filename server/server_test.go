@@ -45,12 +45,13 @@ func (s *StubCustomerRepository) ListBy(
 	lastName string,
 	limit int,
 	offset int,
-) (error, []database.Customer) {
+) (error, []database.Customer, int) {
+	total := len(s.customers)
 	if limit > len(s.customers) {
-		return nil, s.customers
+		return nil, s.customers, total
 	}
 	customers := s.customers[offset : offset+limit]
-	return nil, customers
+	return nil, customers, total
 }
 
 func (s *StubCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
@@ -279,26 +280,34 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		var actualCustomers []map[string]string
+		var actualCustomers fiber.Map
 		err := json.NewDecoder(resp.Body).Decode(&actualCustomers)
 		assert.NoError(t, err)
-		assert.Equal(t, []map[string]string{
-			{
-				"id":               "7dd4ace2-d792-4532-bda2-c986a9a04363",
-				"first_name":       "Jane",
-				"last_name":        "Doe",
-				"telephone_number": "123567848",
-				"created_at":       "0001-01-01T00:00:00Z",
-				"updated_at":       "0001-01-01T00:00:00Z",
-			}, {
-				"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
-				"first_name":       "Bob",
-				"last_name":        "Toe",
-				"telephone_number": "367654567",
-				"created_at":       "0001-01-01T00:00:00Z",
-				"updated_at":       "0001-01-01T00:00:00Z",
+		assert.Equal(
+			t,
+			fiber.Map{
+				"data": []interface{}{
+					map[string]interface{}{
+						"created_at":       "0001-01-01T00:00:00Z",
+						"first_name":       "Jane",
+						"id":               "7dd4ace2-d792-4532-bda2-c986a9a04363",
+						"last_name":        "Doe",
+						"telephone_number": "123567848",
+						"updated_at":       "0001-01-01T00:00:00Z",
+					},
+					map[string]interface{}{
+						"created_at":       "0001-01-01T00:00:00Z",
+						"first_name":       "Bob",
+						"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
+						"last_name":        "Toe",
+						"telephone_number": "367654567",
+						"updated_at":       "0001-01-01T00:00:00Z",
+					},
+				},
+				"total": 2.0,
 			},
-		}, actualCustomers)
+			actualCustomers,
+		)
 	})
 
 	t.Run("test get paginated customers", func(t *testing.T) {
@@ -327,26 +336,29 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		var actualCustomers []map[string]string
+		var actualCustomers fiber.Map
 		err := json.NewDecoder(resp.Body).Decode(&actualCustomers)
 		assert.NoError(t, err)
-		assert.Equal(t, []map[string]string{
-			{
-				"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
-				"first_name":       "Bob",
-				"last_name":        "Toe",
-				"telephone_number": "367654567",
-				"created_at":       "0001-01-01T00:00:00Z",
-				"updated_at":       "0001-01-01T00:00:00Z",
+		assert.Equal(t, fiber.Map{
+			"data": []interface{}{
+				map[string]interface{}{
+					"created_at":       "0001-01-01T00:00:00Z",
+					"first_name":       "Bob",
+					"id":               "8a5cae65-222c-4164-a08b-9983af7e366c",
+					"last_name":        "Toe",
+					"telephone_number": "367654567",
+					"updated_at":       "0001-01-01T00:00:00Z",
+				},
+				map[string]interface{}{
+					"created_at":       "0001-01-01T00:00:00Z",
+					"first_name":       "Joe",
+					"id":               "325cae65-222c-4164-a08b-9983af7e366c",
+					"last_name":        "Doe",
+					"telephone_number": "567231123",
+					"updated_at":       "0001-01-01T00:00:00Z",
+				},
 			},
-			{
-				"id":               "325cae65-222c-4164-a08b-9983af7e366c",
-				"first_name":       "Joe",
-				"last_name":        "Doe",
-				"telephone_number": "567231123",
-				"created_at":       "0001-01-01T00:00:00Z",
-				"updated_at":       "0001-01-01T00:00:00Z",
-			},
+			"total": 3.0,
 		}, actualCustomers)
 	})
 
@@ -358,7 +370,13 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-		assert.ElementsMatch(t, expectedCustomers, decodeCustomers(t, resp.Body))
+		var actualCustomers fiber.Map
+		err := json.NewDecoder(resp.Body).Decode(&actualCustomers)
+		assert.NoError(t, err)
+		assert.Equal(t, fiber.Map{
+      "data":  nil,
+			"total": 0.0,
+		}, actualCustomers)
 	})
 
 	t.Run("test create new customer", func(t *testing.T) {
@@ -379,9 +397,10 @@ func TestCustomerHandlers(t *testing.T) {
 			"created_at":       "0001-01-01T00:00:00Z",
 			"updated_at":       "0001-01-01T00:00:00Z",
 		})
-		_, currentCustomers := server.customerRepository.ListBy("", "", 10, 0)
+		_, currentCustomers, total := server.customerRepository.ListBy("", "", 10, 0)
 		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
+		assert.Equal(t, 1, total)
 	})
 
 	t.Run("test create new customer invalid payload", func(t *testing.T) {
@@ -408,8 +427,9 @@ func TestCustomerHandlers(t *testing.T) {
 			},
 			actualErrorMessage,
 		)
-		_, currentCustomers := server.customerRepository.ListBy("", "", 10, 0)
+		_, currentCustomers, total := server.customerRepository.ListBy("", "", 10, 0)
 		assert.ElementsMatch(t, []database.Customer{}, currentCustomers)
+		assert.Equal(t, 0, total)
 	})
 
 	t.Run("test create new customer invalid content-type header", func(t *testing.T) {
@@ -670,10 +690,11 @@ func TestCustomerHandlers(t *testing.T) {
 		resp := getResponse(t, server, req)
 
 		assert.Equal(t, fiber.StatusNoContent, resp.StatusCode)
-		err, customers := server.customerRepository.ListBy("", "", 10, 0)
+		err, customers, total := server.customerRepository.ListBy("", "", 10, 0)
 		assert.NoError(t, err)
 		assert.Equal(t, []database.Customer{customerTwo}, customers)
 		assert.Equal(t, "", resp.Header.Get("Content-Type"))
+		assert.Equal(t, 1, total)
 	})
 
 	t.Run("test delete customer but not found", func(t *testing.T) {

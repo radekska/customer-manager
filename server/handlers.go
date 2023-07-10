@@ -36,7 +36,7 @@ func genericListHandler[V []database.Purchase | []database.Repair](
 //	@Description	Returns full list of existing customers
 //	@Tags			list-customers
 //	@Produce		json
-//	@Success		200			{array}	database.Customer
+//	@Success		200			{array}	database.Customer // TODO - valid response body is {"data": []database.Customer, "total": int}
 //	@Param			firstName	query	string	false	"first name search"
 //	@Param			lastName	query	string	false	"last name search"
 //	@Param			limit		query	int		false	"list length"	default(10)
@@ -48,11 +48,11 @@ func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 		lastName := ctx.Query("lastName")
 		limit := ctx.QueryInt("limit", 10)
 		offset := ctx.QueryInt("offset", 0)
-		err, customers := server.customerRepository.ListBy(firstName, lastName, limit, offset)
+		err, customers, total := server.customerRepository.ListBy(firstName, lastName, limit, offset)
 		if err != nil {
 			return fiber.ErrInternalServerError
 		}
-		return ctx.Status(fiber.StatusOK).JSON(customers)
+		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"data": customers, "total": total})
 	}
 }
 

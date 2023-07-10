@@ -42,7 +42,7 @@ func (d *DBCustomerRepository) ListBy(
 	customerLastName string,
 	limit int,
 	offset int,
-) (error, []database.Customer) {
+) (error, []database.Customer, int) {
 	var customers []database.Customer
 	var result *gorm.DB
 	firstName := strings.ToLower(customerFirstName)
@@ -57,7 +57,9 @@ func (d *DBCustomerRepository) ListBy(
 			firstNameQuery, lastNameQuery).Offset(offset).Limit(limit).Order("first_name asc").Find(&customers)
 	}
 
-	return result.Error, customers
+	var total int64
+	d.DB.Model(&database.Customer{}).Count(&total)
+	return result.Error, customers, int(total)
 }
 
 func (d *DBCustomerRepository) GetByID(customerID string) (error, *database.Customer) {
