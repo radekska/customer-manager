@@ -36,11 +36,11 @@ func genericListHandler[V []database.Purchase | []database.Repair](
 //	@Description	Returns full list of existing customers
 //	@Tags			list-customers
 //	@Produce		json
-//	@Success		200			{array}	database.Customer // TODO - valid response body is {"data": []database.Customer, "total": int}
-//	@Param			firstName	query	string	false	"first name search"
-//	@Param			lastName	query	string	false	"last name search"
-//	@Param			limit		query	int		false	"list length"	default(10)
-//	@Param			offset		query	int		false	"list offset"	default(0)
+//	@Success		200			{array}	database.Customer	//		TODO	-	valid	response	body	is	{"data": []database.Customer, "total": int}
+//	@Param			firstName	query	string				false	"first name search"
+//	@Param			lastName	query	string				false	"last name search"
+//	@Param			limit		query	int					false	"list length"	default(10)
+//	@Param			offset		query	int					false	"list offset"	default(0)
 //	@Router			/api/customers [get]
 func getCustomersHandler(server *CustomerManagerServer) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -89,8 +89,14 @@ func createCustomerHandler(server *CustomerManagerServer) fiber.Handler {
 				TelephoneNumber: newCustomer.TelephoneNumber,
 			},
 		)
+		target := &repositories.DuplicatedTelephoneNumberError{}
+		if errors.As(err, &target) {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"detail": err.Error(),
+			})
+		}
+
 		if err != nil {
-			// TODO - fix DB error message 'UNIQUE constraint failed: customers.telephone_number'
 			return err
 		}
 		return ctx.Status(fiber.StatusCreated).JSON(customer)
@@ -157,7 +163,6 @@ func editCustomerByIDHandler(server *CustomerManagerServer) fiber.Handler {
 		}
 		validator := getValidator(newCustomerDetails)
 		if !validator.Validate() {
-			fmt.Println(validator.Errors)
 			return ctx.Status(fiber.StatusBadRequest).JSON(validator.Errors)
 		}
 
