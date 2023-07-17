@@ -21,6 +21,11 @@ type StubCustomerRepository struct {
 }
 
 func (s *StubCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
+	for _, c := range s.customers {
+		if c.TelephoneNumber == customer.TelephoneNumber {
+			return &repositories.DuplicatedTelephoneNumberError{Customer: customer}, nil
+		}
+	}
 	customer.ID = s.customerIDToCreate
 	s.customers = append(s.customers, *customer)
 	return nil, customer
@@ -374,7 +379,7 @@ func TestCustomerHandlers(t *testing.T) {
 		err := json.NewDecoder(resp.Body).Decode(&actualCustomers)
 		assert.NoError(t, err)
 		assert.Equal(t, fiber.Map{
-      "data":  nil,
+			"data":  nil,
 			"total": 0.0,
 		}, actualCustomers)
 	})
@@ -400,6 +405,23 @@ func TestCustomerHandlers(t *testing.T) {
 		_, currentCustomers, total := server.customerRepository.ListBy("", "", 10, 0)
 		customer.ID = "67a85348-2afe-4677-99ce-ed7cdc17e525"
 		assert.ElementsMatch(t, []database.Customer{customer}, currentCustomers)
+		assert.Equal(t, 1, total)
+	})
+
+	t.Run("test create new customer duplicated telephone number", func(t *testing.T) {
+		server.customerRepository = &StubCustomerRepository{
+			customers: []database.Customer{{FirstName: "Bob", LastName: "Smith", TelephoneNumber: "123-456-789"}},
+		}
+		body, _ := json.Marshal(&customer)
+		req := makeRequest(t, http.MethodPost, "/api/customers", bytes.NewBuffer(body))
+
+		resp := getResponse(t, server, req)
+
+		assert.Equal(t, fiber.StatusBadRequest, resp.StatusCode)
+		assertCustomerDetailsResponse(t, resp, map[string]string{
+			"detail": "customer 'John Doe' cannot have telephone number '123-456-789' as already taken.",
+		})
+		_, _, total := server.customerRepository.ListBy("", "", 10, 0)
 		assert.Equal(t, 1, total)
 	})
 

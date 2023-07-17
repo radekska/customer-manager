@@ -22,8 +22,25 @@ func (c *CustomerNotFoundError) Error() string {
 	return fmt.Sprintf("customer with ID '%s' does not exist", c.CustomerID)
 }
 
+type DuplicatedTelephoneNumberError struct {
+	Customer *database.Customer
+}
+
+func (d *DuplicatedTelephoneNumberError) Error() string {
+	return fmt.Sprintf(
+		"customer '%s %s' cannot have telephone number '%s' as already taken.",
+		d.Customer.FirstName,
+		d.Customer.LastName,
+		d.Customer.TelephoneNumber,
+	)
+}
+
 func (d *DBCustomerRepository) Create(customer *database.Customer) (error, *database.Customer) {
-	return d.DB.Create(&customer).Error, customer
+	err := d.DB.Create(&customer).Error
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return &DuplicatedTelephoneNumberError{customer}, nil
+	}
+	return err, customer
 }
 
 func (d *DBCustomerRepository) DeleteByID(customerID string) error {

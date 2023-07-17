@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"customer-manager/database"
+	"fmt"
 	"testing"
 	"time"
 
@@ -41,10 +42,11 @@ func TestDBCustomerRepository(t *testing.T) {
 		assert.NoError(t, err)
 
 		err, _ = customerRepository.Create(customer)
+		fmt.Println("DUPA", err)
 
 		dbCustomers := getAllCustomers(t, db)
 
-		assert.Error(t, err, "unique constraint failed error must be present") // compare errors here
+		assert.EqualError(t, err, "customer 'John Doe' cannot have telephone number '123456789' as already taken.")
 		assert.Equal(t, 1, len(dbCustomers))
 
 		clearRecords(t, db)
@@ -140,7 +142,7 @@ func TestDBCustomerRepository(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, dbCustomers, 0)
-    assert.Equal(t, 0, total)
+		assert.Equal(t, 0, total)
 	})
 
 	t.Run("test get customer by its id", func(t *testing.T) {
