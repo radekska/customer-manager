@@ -1,5 +1,7 @@
 # Customer Manager Microservice
 
+UI repository can be found [here](https://github.com/radekska/customer-manager-ui).
+
 ## Documentation
 ```shell
 make api-docs && make start
